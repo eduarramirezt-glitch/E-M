@@ -49,11 +49,11 @@ exports.handler = async (event) => {
 
   const siteUrl = process.env.URL || "https://tu-sitio.netlify.app";
 
-  // El total y cada precio deben mandarse como texto con 2 decimales,
-  // y total_amount debe ser exactamente la suma de unit_price * quantity.
+  // Para pesos colombianos (COP) Mercado Pago espera montos como texto
+  // SIN decimales (la moneda no tiene centavos) — usar "145000", no "145000.00".
   const totalAmount = items
     .reduce((sum, item) => sum + item.precio * item.cantidad, 0)
-    .toFixed(2);
+    .toString();
 
   const orderBody = {
     type: "online",
@@ -67,7 +67,7 @@ exports.handler = async (event) => {
     items: items.map((item) => ({
       title: item.nombre,
       quantity: item.cantidad,
-      unit_price: item.precio.toFixed(2),
+      unit_price: item.precio.toString(),
     })),
     config: {
       online: {
@@ -77,9 +77,6 @@ exports.handler = async (event) => {
         auto_return: "approved",
       },
     },
-    // Guardamos los datos completos del cliente para poder avisarte
-    // el pedido completo cuando llegue la confirmación por webhook.
-    metadata: { cliente },
   };
 
   try {

@@ -41,7 +41,8 @@ exports.handler = async (event) => {
       console.log("Detalle del pago:", {
         estado: pago.status,
         monto: pago.transaction_amount,
-        cliente: pago.metadata?.cliente,
+        correo_pagador: pago.payer?.email,
+        referencia: pago.external_reference,
       });
 
       // 👉 Aquí es donde, en el futuro, se agregaría el envío de

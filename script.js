@@ -1732,7 +1732,7 @@ function generateDescription(perfume) {
 
   const notas = perfume.notas.join(", ");
 
-  return `${perfume.nombre} es ${intros[coleccion] || "una fragancia de nuestro catálogo"}, ${generoTxt}. Su composición combina notas de ${notas}, desplegando un recorrido envolvente y de buena duración en piel — ideal para quienes buscan distinción en cada salida.`;
+  return `${perfume.nombre} es ${intros[coleccion] || "una fragancia de nuestro catálogo"}, ${generoTxt}. Notas principales: ${notas}.`;
 }
 
 // Icono de frasco de perfume, reutilizado en cada placeholder
@@ -1794,20 +1794,24 @@ function createProductCard(perfume) {
   card.innerHTML = `
     <div class="card-media">
       ${mediaHTML}
-      <span class="gender-tag tag--${coleccion}">${generoTag}</span>
     </div>
     <div class="card-body">
       <span class="card-brand">${perfume.marca}</span>
-      <h3>${perfume.nombre}</h3>
-      <p class="card-notes"><strong>Notas:</strong> ${perfume.notas.join(", ")}</p>
+      <h3><button type="button" class="card-title-btn">${perfume.nombre}</button></h3>
+      <p class="card-notes">${perfume.notas.join(" · ")}</p>
+      <p class="card-size">${coleccionRaw} · ${generoTag}</p>
       <div class="card-footer-row">
         <span class="card-price">${formatPrice(perfume.precio)}</span>
-        <span class="card-size">${coleccionRaw}</span>
+        <div class="card-actions">
+          <button type="button" class="btn-add-cart btn-add-cart--card" data-add-to-cart>Agregar</button>
+          <a href="${enlace_whatsapp}" class="card-wa" target="_blank" rel="noopener" aria-label="Consultar ${perfume.nombre} por WhatsApp" title="Consultar por WhatsApp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20.5l1.6-4.5a8.3 8.3 0 1 1 15.4-4.4Z"/>
+              <path d="M9.2 8.9c.3 2.7 2.4 4.9 5.5 5.9"/>
+            </svg>
+          </a>
+        </div>
       </div>
-    </div>
-    <div class="card-actions">
-      <button type="button" class="btn-add-cart btn-add-cart--card" data-add-to-cart>Agregar al carrito</button>
-      <a href="${enlace_whatsapp}" class="btn-wa" target="_blank" rel="noopener">WhatsApp</a>
     </div>
   `;
 
@@ -2159,10 +2163,32 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 4.2) Genera todas las tarjetas desde el arreglo PERFUMES ---
   renderCatalog();
 
+  // --- 4.2.0) Entrada suave de las tarjetas al hacer scroll ---
+  // Solo si el navegador lo soporta y la persona no pidió menos movimiento.
+  // Sin esta clase las tarjetas se ven normales (nada queda oculto si falla el JS).
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if ("IntersectionObserver" in window && !reduceMotion) {
+    document.documentElement.classList.add("reveal-on");
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-in");
+          revealObserver.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -6% 0px" }
+    );
+    document.querySelectorAll(".product-card").forEach((card, i) => {
+      card.style.setProperty("--d", `${(i % 4) * 60}ms`);
+      revealObserver.observe(card);
+    });
+  }
+
   // --- 4.2.1) Abrir el modal al hacer clic en el NOMBRE del perfume ---
   // (delegación de eventos: un solo listener para las 186 tarjetas)
   document.getElementById("productGrid").addEventListener("click", (e) => {
-    const h3 = e.target.closest("h3");
+    const h3 = e.target.closest("h3, .card-media");
     if (!h3) return;
     const card = e.target.closest(".product-card");
     if (card && card.perfumeRef) openProductModal(card.perfumeRef);

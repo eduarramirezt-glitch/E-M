@@ -1794,7 +1794,7 @@ function createProductCard(perfume) {
   card.innerHTML = `
     <div class="card-media">
       ${mediaHTML}
-      <span class="gender-tag">${generoTag}</span>
+      <span class="gender-tag tag--${coleccion}">${generoTag}</span>
     </div>
     <div class="card-body">
       <span class="card-brand">${perfume.marca}</span>

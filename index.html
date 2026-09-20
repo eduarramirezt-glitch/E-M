@@ -2,73 +2,101 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="images/logo-em.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#16130f">
 <title>E&M | El aroma que te define</title>
+<meta name="description" content="Perfumería de diseñador, esencias árabes y firmas de celebridades. Elige tu fragancia y resérvala directo por WhatsApp. Envíos a toda Colombia.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="E&M | El aroma que te define">
+<meta property="og:description" content="Perfumería de diseñador, esencias árabes y firmas de celebridades. Reserva directo por WhatsApp.">
+<meta property="og:image" content="https://eym-luxe.netlify.app/images/logo-em.png">
+<link rel="icon" type="image/png" href="images/logo-em.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<a class="skip-link" href="#catalogo">Saltar al catálogo</a>
+
 <!-- ===================== BARRA DE ANUNCIO ===================== -->
 <div class="announce-bar">
-  <p>✨ PERFUMES 100% ORIGINALES &nbsp;·&nbsp; 🚚 ENVÍOS A TODA COLOMBIA &nbsp;·&nbsp; 💳 PAGO SEGURO O CONTRAENTREGA</p>
+  <p>
+    <span>Fragancias tipo original</span>
+    <span>Envíos a toda Colombia</span>
+    <span>Pago seguro o contraentrega</span>
+  </p>
 </div>
 
 <!-- ===================== HEADER ===================== -->
 <header class="site-header" id="top">
   <div class="header-inner">
-    <a href="#top" class="logo">
-      <img src="images/logo-em.png" alt="E&M" class="logo-img">
+    <a href="#top" class="logo" aria-label="E&M, inicio">
+      <img src="images/logo-em.png" alt="E&M" class="logo-img" width="42" height="42">
     </a>
-    <nav class="main-nav">
+    <nav class="main-nav" aria-label="Principal">
       <a href="#catalogo">Catálogo</a>
       <a href="#contacto">Contacto</a>
     </nav>
-    <a class="header-cta" data-wa-product="consulta general" href="#">Escríbenos</a>
-    <button type="button" class="cart-trigger" id="cartTrigger" aria-label="Ver carrito">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7">
-        <circle cx="9" cy="21" r="1"></circle>
-        <circle cx="19" cy="21" r="1"></circle>
-        <path d="M2.5 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 7H6"></path>
-      </svg>
-      <span class="cart-badge" id="cartBadge" hidden>0</span>
-    </button>
+    <div class="header-actions">
+      <a class="header-cta" data-wa-product="consulta general" href="#">Escríbenos</a>
+      <button type="button" class="cart-trigger" id="cartTrigger" aria-label="Ver carrito">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 8h14l-1.1 11.2a1.5 1.5 0 0 1-1.5 1.3H7.6a1.5 1.5 0 0 1-1.5-1.3L5 8Z"></path>
+          <path d="M9 8V6.5a3 3 0 0 1 6 0V8"></path>
+        </svg>
+        <span class="cart-badge" id="cartBadge" hidden>0</span>
+      </button>
+    </div>
   </div>
 </header>
+
+<main>
 
 <!-- ===================== HERO ===================== -->
 <section class="hero">
   <div class="hero-inner">
-    <p class="hero-kicker">Fragancias tipo original · larga duración</p>
-    <h1>El aroma <em>que te define</em></h1>
-    <p class="hero-text">
-      Una selección curada de perfumería de diseñador, esencias árabes y firmas de celebridades.
-      Sin filas, sin vitrinas: eliges tu fragancia y la reservas directo por WhatsApp.
-    </p>
-    <div class="hero-actions">
-      <a href="#catalogo" class="btn btn-primary">Ver catálogo</a>
-      <a href="#" class="btn btn-outline" data-wa-product="consulta general">Hablar por WhatsApp</a>
+    <div class="hero-copy">
+      <h1>El aroma <em>que te define</em></h1>
+      <p class="hero-text">
+        Una selección curada de perfumería de diseñador, esencias árabes y firmas de celebridades.
+        Sin filas, sin vitrinas: eliges tu fragancia y la reservas directo por WhatsApp.
+      </p>
+      <div class="hero-actions">
+        <a href="#catalogo" class="btn btn-primary">
+          Ver catálogo
+          <span class="btn-arrow-dot" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </span>
+        </a>
+        <a href="#" class="text-link" data-wa-product="consulta general">Hablar por WhatsApp</a>
+      </div>
+      <p class="hero-note">Fragancias tipo original · larga duración</p>
     </div>
-  </div>
-  <div class="hero-mark" aria-hidden="true">E&amp;M</div>
-  <div class="hero-badge">
-    <span class="hero-badge-icon">🚚</span>
-    <span>Envíos a toda Colombia</span>
+
+    <div class="hero-art" aria-hidden="true">
+      <figure class="arch"><img src="images/delina.jpg" alt="" width="900" height="720" decoding="async"></figure>
+      <figure class="arch"><img src="images/khamrah.jpg" alt="" width="900" height="720" decoding="async"></figure>
+      <figure class="arch"><img src="images/sauvage.jpg" alt="" width="900" height="720" decoding="async"></figure>
+    </div>
   </div>
 </section>
 
 <!-- ===================== BUSCADOR + FILTROS ===================== -->
 <section class="finder" id="catalogo">
 
+  <div class="finder-head">
+    <h2>El catálogo</h2>
+    <p class="finder-count" id="resultCount" aria-live="polite"></p>
+  </div>
+
   <div class="finder-search">
-    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-      <circle cx="11" cy="11" r="7"></circle>
-      <line x1="21" y1="21" x2="16.4" y2="16.4"></line>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="6.5"></circle>
+      <line x1="20" y1="20" x2="15.8" y2="15.8"></line>
     </svg>
-    <input type="text" id="searchInput" placeholder="Busca por nombre, marca o nota (ej: vainilla, Dior, oud...)" autocomplete="off">
+    <input type="search" id="searchInput" placeholder="Busca por nombre, marca o nota (vainilla, Dior, oud…)" autocomplete="off" aria-label="Buscar fragancias">
     <button type="button" id="clearSearch" class="clear-search" aria-label="Borrar búsqueda" hidden>&times;</button>
   </div>
 
@@ -78,7 +106,7 @@
       <button type="button" class="pill is-active" data-category="todos">Todos</button>
       <button type="button" class="pill" data-category="hombre">Hombre</button>
       <button type="button" class="pill" data-category="mujer">Mujer</button>
-      <button type="button" class="pill" data-category="arabe">Marcas Árabes</button>
+      <button type="button" class="pill" data-category="arabe">Marcas árabes</button>
       <button type="button" class="pill" data-category="disenador">Diseñador</button>
       <button type="button" class="pill" data-category="celebridad">Celebridades</button>
     </div>
@@ -94,12 +122,10 @@
     </div>
     <button type="button" id="resetFilters" class="reset-filters">Limpiar filtros</button>
   </div>
-
-  <p class="finder-count" id="resultCount"></p>
 </section>
 
 <!-- ===================== GRID DE PRODUCTOS ===================== -->
-<section class="catalog-section">
+<section class="catalog-section" aria-label="Fragancias">
 
   <div class="product-grid" id="productGrid">
     <!-- Las tarjetas se generan dinámicamente desde script.js (arreglo PERFUMES) -->
@@ -112,14 +138,22 @@
 
 </section>
 
+</main>
+
 <!-- ===================== CONTACTO / FOOTER ===================== -->
 <footer class="site-footer" id="contacto">
   <div class="footer-inner">
-    <p class="footer-logo">
-      <img src="images/logo-em.png" alt="E&M" class="footer-logo-img">
-    </p>
-    <p>¿No encuentras tu fragancia favorita? Escríbenos y te confirmamos disponibilidad al instante.</p>
-    <a href="#" class="btn btn-primary" data-wa-product="consulta general">Escribir por WhatsApp</a>
+    <div class="footer-main">
+      <h2>¿No encuentras tu fragancia favorita?</h2>
+      <p>Escríbenos y te confirmamos disponibilidad al instante.</p>
+      <a href="#" class="btn btn-primary btn-light" data-wa-product="consulta general">
+        Escribir por WhatsApp
+        <span class="btn-arrow-dot" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </span>
+      </a>
+    </div>
+    <img src="images/logo-em.png" alt="E&M" class="footer-logo-img" width="120" height="120" loading="lazy">
     <p class="footer-fine">© <span id="year"></span> E&M. Todos los derechos reservados.</p>
   </div>
 </footer>
@@ -199,7 +233,7 @@
         </label>
         <label>
           Teléfono / WhatsApp
-          <input type="tel" name="telefono" required autocomplete="tel" placeholder="Ej: 3001234567">
+          <input type="tel" name="telefono" required autocomplete="tel" inputmode="tel" placeholder="Ej: 3001234567">
         </label>
         <label>
           Correo electrónico
@@ -245,7 +279,7 @@
 
 <!-- ===================== BOTÓN FLOTANTE WHATSAPP ===================== -->
 <a href="#" class="whatsapp-float" id="whatsappFloat" data-wa-product="consulta general" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener">
-  <svg viewBox="0 0 32 32" width="30" height="30" fill="currentColor" aria-hidden="true">
+  <svg viewBox="0 0 32 32" width="28" height="28" fill="currentColor" aria-hidden="true">
     <path d="M19.11 17.205c-.372 0-1.088 1.39-1.518 1.39a.63.63 0 0 1-.315-.1c-.802-.402-1.504-.817-2.163-1.447-.545-.516-1.146-1.29-1.46-1.963a.426.426 0 0 1-.073-.215c0-.33.99-.945.99-1.49 0-.143-.73-2.09-.832-2.335-.143-.372-.214-.487-.605-.487-.187 0-.36-.043-.53-.043-.302 0-.53.115-.73.315-.688.688-1.032 1.404-1.06 2.377v.114c-.015.99.472 1.963 1.017 2.78 1.246 1.878 2.606 3.5 4.483 4.727.72.472 1.526.945 2.318 1.29.615.271 1.288.485 1.988.485.888 0 2.36-.888 2.588-1.99.043-.187.043-.32.043-.5 0-.15-.02-.3-.09-.42-.212-.35-1.05-.75-1.05-.75l-.201-.115ZM16.083 3.984C9.44 3.984 4.032 9.392 4.032 16.03c0 2.24.617 4.35 1.687 6.15L4 28.032l6-1.687a12.05 12.05 0 0 0 6.083 1.64c6.643 0 12.05-5.408 12.05-12.05 0-6.638-5.4-12.045-12.05-11.951Zm0 21.87a9.77 9.77 0 0 1-5.28-1.545l-.378-.225-3.93 1.117 1.05-3.85-.246-.396a9.76 9.76 0 0 1-1.497-5.222c0-5.408 4.401-9.81 9.81-9.81 5.407 0 9.81 4.394 9.81 9.81-.007 5.407-4.409 9.81-9.339 9.81Z"/>
   </svg>
 </a>

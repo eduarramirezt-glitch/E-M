@@ -37,6 +37,7 @@
     </a>
     <nav class="main-nav" aria-label="Principal">
       <a href="#catalogo">Catálogo</a>
+      <a href="#guias">Guías</a>
       <a href="#contacto">Contacto</a>
     </nav>
     <div class="header-actions">
@@ -76,10 +77,18 @@
     </div>
 
     <div class="hero-art" aria-hidden="true">
-      <figure class="arch"><img src="images/delina.jpg" alt="" width="900" height="720" decoding="async"></figure>
-      <figure class="arch"><img src="images/khamrah.jpg" alt="" width="900" height="720" decoding="async"></figure>
-      <figure class="arch"><img src="images/sauvage.jpg" alt="" width="900" height="720" decoding="async"></figure>
+      <figure class="arch"><img src="images/delina.jpg" alt="" width="800" height="640" decoding="async"></figure>
+      <figure class="arch"><img src="images/khamrah.jpg" alt="" width="800" height="640" decoding="async"></figure>
+      <figure class="arch"><img src="images/sauvage.jpg" alt="" width="800" height="640" decoding="async"></figure>
     </div>
+  </div>
+</section>
+
+<!-- ===================== CINTA DE MARCAS ===================== -->
+<!-- Se llena desde script.js con las marcas del arreglo PERFUMES; tocar una marca filtra el catálogo -->
+<section class="brands" aria-label="Marcas del catálogo">
+  <div class="brands-viewport">
+    <div class="brands-track" id="brandsTrack"></div>
   </div>
 </section>
 
@@ -136,6 +145,67 @@
     <button type="button" id="noResultsReset" class="link-reset">limpia la búsqueda</button>.
   </p>
 
+</section>
+
+<!-- ===================== GUÍAS Y CONSEJOS ===================== -->
+<section class="guides" id="guias">
+  <div class="guides-inner">
+    <div class="guides-intro">
+      <h2>Guías para elegir mejor</h2>
+      <p>Consejos cortos para escoger, usar y cuidar tu perfume.</p>
+      <a href="#" class="text-link" data-wa-product="consulta general">Pídenos una recomendación</a>
+    </div>
+
+    <div class="guides-list">
+      <details class="guide" name="guia" open>
+        <summary>
+          <span class="guide-title">Cómo elegir un perfume que sí vas a usar</span>
+          <span class="guide-icon" aria-hidden="true"></span>
+        </summary>
+        <div class="guide-body">
+          <p>Empieza por preguntarte cuándo lo usarás: para la oficina, para salir de noche o para todos los días. Con clima cálido se sienten mejor los aromas cítricos y frescos; con frío, o de noche, funcionan más los amaderados, dulces y especiados.</p>
+          <p>Si puedes probarlo, hazlo sobre la piel y no sobre el papel: el aroma cambia según la persona. Espera unos minutos antes de decidir, porque lo que hueles al principio no es lo que se queda. Y no pruebes más de tres a la vez.</p>
+        </div>
+      </details>
+
+      <details class="guide" name="guia">
+        <summary>
+          <span class="guide-title">Las notas olfativas, sin tecnicismos</span>
+          <span class="guide-icon" aria-hidden="true"></span>
+        </summary>
+        <div class="guide-body">
+          <p>Un perfume no huele igual todo el tiempo. Se habla de tres momentos:</p>
+          <ul>
+            <li><strong>Notas de salida:</strong> lo primero que hueles y dura pocos minutos, como los cítricos.</li>
+            <li><strong>Notas de corazón:</strong> el cuerpo del perfume, con flores, frutas o especias.</li>
+            <li><strong>Notas de fondo:</strong> lo que queda durante horas, como las maderas, la vainilla, el ámbar o el almizcle.</li>
+          </ul>
+          <p>Los filtros del catálogo (dulce, cítrico, amaderado y vainilla) te ayudan a encontrar la familia que más te gusta.</p>
+        </div>
+      </details>
+
+      <details class="guide" name="guia">
+        <summary>
+          <span class="guide-title">Cuánto dura un perfume y cómo hacerlo rendir</span>
+          <span class="guide-icon" aria-hidden="true"></span>
+        </summary>
+        <div class="guide-body">
+          <p>La duración depende del perfume, de tu piel y del clima, así que no hay una cifra igual para todos. Lo que sí ayuda: aplicarlo después de la ducha con la piel hidratada, ponerlo en cuello y muñecas y no frotar la piel después.</p>
+          <p>Las versiones más concentradas (eau de parfum, parfum) suelen durar más que las de menor concentración (eau de toilette, colonia). Si dejas de sentirlo, a veces es tu nariz que se acostumbró: las demás personas sí lo perciben.</p>
+        </div>
+      </details>
+
+      <details class="guide" name="guia">
+        <summary>
+          <span class="guide-title">Cómo guardar tus fragancias</span>
+          <span class="guide-icon" aria-hidden="true"></span>
+        </summary>
+        <div class="guide-body">
+          <p>La luz, el calor y la humedad dañan el perfume. Guárdalo en su caja, en un lugar fresco y seco, y no en el baño ni dentro del carro. Mantenlo bien cerrado y evita agitarlo. Así conserva su aroma por más tiempo.</p>
+        </div>
+      </details>
+    </div>
+  </div>
 </section>
 
 </main>

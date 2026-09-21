@@ -2163,6 +2163,48 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 4.2) Genera todas las tarjetas desde el arreglo PERFUMES ---
   renderCatalog();
 
+  // --- 4.2.-1) Cinta de marcas: sale sola de los datos de PERFUMES ---
+  // Se ordena de la marca con más fragancias a la que tiene menos. Tocar una marca
+  // la escribe en el buscador (que ya filtra por marca) y baja al catálogo.
+  (function buildBrandStrip() {
+    const track = document.getElementById("brandsTrack");
+    if (!track) return;
+
+    const counts = new Map();
+    PERFUMES.forEach((p) => {
+      if (/^colecci[oó]n/i.test(p.marca)) return; // "Colección Boutique/Nicho" no son marcas
+      counts.set(p.marca, (counts.get(p.marca) || 0) + 1);
+    });
+    const brands = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map((entry) => entry[0]);
+
+    // dos grupos idénticos: el segundo es solo para que el bucle no tenga salto
+    const makeGroup = (isCopy) => {
+      const group = document.createElement("div");
+      group.className = "brands-group";
+      if (isCopy) group.setAttribute("aria-hidden", "true");
+      brands.forEach((brand) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "brand-chip";
+        chip.dataset.brand = brand;
+        chip.textContent = brand;
+        if (isCopy) chip.tabIndex = -1;
+        group.appendChild(chip);
+      });
+      return group;
+    };
+    track.append(makeGroup(false), makeGroup(true));
+
+    track.addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-brand]");
+      if (!chip) return;
+      const input = document.getElementById("searchInput");
+      input.value = chip.dataset.brand;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      document.getElementById("catalogo").scrollIntoView({ behavior: "smooth" });
+    });
+  })();
+
   // --- 4.2.0) Entrada suave de las tarjetas al hacer scroll ---
   // Solo si el navegador lo soporta y la persona no pidió menos movimiento.
   // Sin esta clase las tarjetas se ven normales (nada queda oculto si falla el JS).

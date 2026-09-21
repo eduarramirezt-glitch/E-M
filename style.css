@@ -9,6 +9,7 @@
   --ink-soft: #221d17;
   --paper: #faf6ef;
   --paper-deep: #f1eadf;
+  --canvas: #f4ecda; /* fondo de las fotos de producto (rgb 244,236,218) */
   --line: rgba(22, 19, 15, 0.12);
   --line-strong: rgba(22, 19, 15, 0.3);
 
@@ -383,17 +384,20 @@ a, input { touch-action: manipulation; }
   margin: 0;
   overflow: hidden;
   border-radius: 999px 999px 14px 14px;
-  background: var(--ink-soft);
+  background: var(--canvas);
   box-shadow: 0 30px 50px -28px rgba(0, 0, 0, 0.75);
 }
-.arch:nth-child(1) { aspect-ratio: 3 / 4.5; }
-.arch:nth-child(2) { aspect-ratio: 3 / 5.7; }
-.arch:nth-child(3) { aspect-ratio: 3 / 4.1; }
+.arch:nth-child(1) { aspect-ratio: 3 / 4.2; }
+.arch:nth-child(2) { aspect-ratio: 3 / 5; }
+.arch:nth-child(3) { aspect-ratio: 3 / 3.7; }
+/* el perfume completo, centrado, sobre el mismo crema de las fotos.
+   El zoom lo acerca (la foto trae margen alrededor) sin llegar a recortarlo. */
 .arch img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: 66% 50%;
+  object-fit: contain;
+  object-position: 50% 56%;
+  transform: scale(1.22);
 }
 
 @keyframes rise {
@@ -408,6 +412,56 @@ a, input { touch-action: manipulation; }
 .arch:nth-child(1) { animation-delay: 200ms; }
 .arch:nth-child(2) { animation-delay: 300ms; }
 .arch:nth-child(3) { animation-delay: 400ms; }
+
+/* ---------- cinta de marcas ---------- */
+
+.brands {
+  border-bottom: 1px solid var(--line);
+  padding: 1.6rem 0;
+}
+.brands-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.brands-track {
+  display: flex;
+  width: max-content;
+  animation: brands-scroll 80s linear infinite; /* velocidad constante: es una cinta */
+}
+.brands-track:hover,
+.brands-track:focus-within { animation-play-state: paused; }
+.brands-group { display: flex; align-items: center; flex-shrink: 0; }
+.brand-chip {
+  position: relative;
+  background: none;
+  border: 0;
+  padding: 0.3rem 1.8rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  line-height: 1.2;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s var(--ease-out);
+}
+.brand-chip::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+  transform: translateY(-50%);
+}
+@media (hover: hover) and (pointer: fine) {
+  .brand-chip:hover { color: var(--gold-deep); }
+}
+@keyframes brands-scroll {
+  to { transform: translateX(-50%); }
+}
 
 /* ---------- buscador + filtros ---------- */
 
@@ -594,22 +648,20 @@ a, input { touch-action: manipulation; }
   aspect-ratio: 5 / 4;
   overflow: hidden;
   border-radius: 10px;
-  background: var(--paper-deep);
+  /* mismo crema que el lienzo de las fotos (--canvas), para que no se note dónde termina la imagen */
+  background: var(--canvas);
   cursor: pointer;
 }
-/* las fotos vienen de capturas con restos en el borde derecho:
-   el zoom leve anclado a la izquierda los deja fuera de cuadro */
+/* las fotos ya vienen recortadas y centradas en un lienzo de 800x640 (5:4): se ven completas */
 .card-media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: 20% 50%;
-  transform: scale(1.13);
-  transform-origin: 0 50%;
+  object-fit: contain;
+  object-position: 50% 50%;
   transition: transform 0.8s var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
-  .product-card:hover .card-media img { transform: scale(1.18); }
+  .product-card:hover .card-media img { transform: scale(1.04); }
 }
 
 .card-body {
@@ -777,6 +829,89 @@ a, input { touch-action: manipulation; }
   font-family: inherit;
 }
 
+/* ---------- guías y consejos ---------- */
+
+.guides {
+  background: var(--paper-deep);
+  padding: clamp(4rem, 8vw, 7rem) var(--gutter);
+  scroll-margin-top: 3rem;
+}
+.guides-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: start;
+}
+.guides-intro { position: sticky; top: 6rem; }
+.guides-intro h2 {
+  font-size: clamp(2.3rem, 4.6vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  max-width: 12ch;
+}
+.guides-intro p { color: var(--muted); max-width: 34ch; margin: 1.2rem 0 1.6rem; }
+.guides-intro .text-link { color: var(--ink); }
+@media (hover: hover) and (pointer: fine) {
+  .guides-intro .text-link:hover { color: var(--gold-deep); }
+}
+
+.guides-list { border-top: 1px solid var(--line-strong); }
+.guide { border-bottom: 1px solid var(--line-strong); }
+.guide summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+}
+.guide summary::-webkit-details-marker { display: none; }
+.guide-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+.guide-icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  transition: background-color 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
+}
+.guide-icon::before,
+.guide-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11px;
+  height: 1px;
+  background: var(--ink);
+  transform: translate(-50%, -50%);
+  transition: transform 0.3s var(--ease-out);
+}
+.guide-icon::after { transform: translate(-50%, -50%) rotate(90deg); }
+.guide[open] .guide-icon::after { transform: translate(-50%, -50%) rotate(0deg); }
+.guide[open] .guide-icon { background: var(--ink); border-color: var(--ink); }
+.guide[open] .guide-icon::before,
+.guide[open] .guide-icon::after { background: var(--paper); }
+@media (hover: hover) and (pointer: fine) {
+  .guide summary:hover .guide-icon { border-color: var(--ink); }
+}
+.guide-body { padding: 0 3.6rem 1.8rem 0; max-width: 64ch; }
+.guide-body p { margin: 0 0 0.85rem; color: #4a443d; }
+.guide-body ul { margin: 0 0 0.85rem; padding-left: 1.1rem; color: #4a443d; }
+.guide-body li { margin-bottom: 0.4rem; }
+.guide-body li::marker { color: var(--gold-deep); }
+.guide-body strong { color: var(--ink); font-weight: 600; }
+
 /* ---------- footer ---------- */
 
 .site-footer {
@@ -861,15 +996,15 @@ a, input { touch-action: manipulation; }
 .modal-box {
   position: relative;
   width: 100%;
-  max-width: 820px;
-  max-height: 90vh;
-  max-height: 90dvh;
+  max-width: 540px;
+  max-height: 92vh;
+  max-height: 92dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--paper);
   border-radius: 20px;
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  grid-template-columns: minmax(0, 1fr);
   box-shadow: 0 40px 80px -24px rgba(0, 0, 0, 0.6);
   transform: translateY(16px) scale(0.97);
   opacity: 0;
@@ -903,17 +1038,19 @@ a, input { touch-action: manipulation; }
 
 .modal-media {
   position: relative;
-  min-height: 340px;
+  width: 100%; /* sin esto, el max-height de abajo encoge también el ancho por el aspect-ratio */
+  aspect-ratio: 5 / 4;
+  max-height: min(38vh, 380px); /* que el botón de agregar quede a la vista sin hacer scroll */
   overflow: hidden;
-  background: var(--paper-deep);
+  background: var(--canvas);
 }
 .modal-media img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: 62% 50%;
+  object-fit: contain;
+  object-position: 50% 50%;
 }
 .modal-media .placeholder-media { position: absolute; inset: 0; }
 
@@ -1055,7 +1192,7 @@ body.modal-open { overflow: hidden; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 62% 50%;
+  object-position: 75% 50%;
 }
 .cart-item-media .placeholder-media { width: 100%; height: 100%; }
 .cart-item-media .placeholder-media svg { width: 22px; height: 22px; }
@@ -1228,6 +1365,9 @@ body.modal-open { overflow: hidden; }
 }
 
 @media (max-width: 860px) {
+  .guides-inner { grid-template-columns: minmax(0, 1fr); }
+  .guides-intro { position: static; }
+  .guide-body { padding-right: 0; }
   .hero-inner { grid-template-columns: minmax(0, 1fr); }
   .hero-art { max-width: 460px; }
   .footer-inner { grid-template-columns: minmax(0, 1fr); }
@@ -1246,7 +1386,15 @@ body.modal-open { overflow: hidden; }
 
 @media (max-width: 640px) {
   .main-nav { display: none; }
-  .announce-bar p { justify-content: flex-start; }
+  .announce-bar p {
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+    gap: 0.1rem 1.2rem;
+    font-size: 0.72rem;
+    text-align: center;
+  }
+  .announce-bar span + span::before { display: none; }
   .header-cta { padding: 0.58rem 1rem; font-size: 0.8rem; }
   .hero { padding-top: 6.5rem; }
   .checkout-content { padding: 1.8rem 1.3rem 1.6rem; }
@@ -1261,6 +1409,11 @@ body.modal-open { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  /* la cinta de marcas se queda quieta y se acomoda en varias líneas */
+  .brands-track { animation: none; width: auto; }
+  .brands-viewport { -webkit-mask-image: none; mask-image: none; }
+  .brands-group { flex-wrap: wrap; justify-content: center; }
+  .brands-group[aria-hidden="true"] { display: none; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-delay: 0ms !important;

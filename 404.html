@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#16130f">
+<meta name="robots" content="noindex">
+<title>Página no encontrada | E&M</title>
+<link rel="icon" type="image/png" href="/images/logo-em.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .nf { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; }
+  .nf .hero-inner { grid-template-columns: minmax(0, 1fr); text-align: left; }
+  .nf-logo { width: 4.5rem; height: 4.5rem; border-radius: 50%; margin-bottom: 2rem; }
+  .nf h1 { font-size: clamp(2.6rem, 7vw, 5rem); }
+</style>
+</head>
+<body>
+
+<main class="hero nf">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <a href="/" aria-label="E&M, ir al inicio"><img src="/images/logo-em.png" alt="E&M" class="nf-logo" width="72" height="72"></a>
+      <h1>No encontramos <em>esa página</em></h1>
+      <p class="hero-text">Puede que el enlace esté mal escrito o que la página ya no exista. El catálogo sigue completo.</p>
+      <div class="hero-actions">
+        <a href="/#catalogo" class="btn btn-primary">
+          Volver al catálogo
+          <span class="btn-arrow-dot" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </span>
+        </a>
+        <a href="/" class="text-link">Ir al inicio</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

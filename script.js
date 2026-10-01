@@ -233,7 +233,11 @@ function getCart() {
     // precio actual y se quitan los perfumes que ya no se muestran.
     return cart
       .filter((item) => PERFUMES_POR_ID.has(item.id))
-      .map((item) => ({ ...item, precio: PERFUMES_POR_ID.get(item.id).precio }));
+      .map((item) => ({
+        ...item,
+        precio: PERFUMES_POR_ID.get(item.id).precio,
+        cantidad: Math.min(item.cantidad, MAX_UNIDADES),
+      }));
   } catch (e) {
     return [];
   }
@@ -255,13 +259,16 @@ function perfumeId(perfume) {
 
 const PERFUMES_POR_ID = new Map(PERFUMES.map((perfume) => [perfumeId(perfume), perfume]));
 
+// Mismo tope que acepta la función de pago (crear-orden.js)
+const MAX_UNIDADES = 20;
+
 function addToCart(perfume, cantidad = 1) {
   const cart = getCart();
   const id = perfumeId(perfume);
   const existente = cart.find((item) => item.id === id);
 
   if (existente) {
-    existente.cantidad += cantidad;
+    existente.cantidad = Math.min(existente.cantidad + cantidad, MAX_UNIDADES);
   } else {
     cart.push({
       id,
@@ -283,7 +290,7 @@ function updateCartQty(id, cantidad) {
     cart = cart.filter((item) => item.id !== id);
   } else {
     const item = cart.find((i) => i.id === id);
-    if (item) item.cantidad = cantidad;
+    if (item) item.cantidad = Math.min(cantidad, MAX_UNIDADES);
   }
   saveCart(cart);
 }

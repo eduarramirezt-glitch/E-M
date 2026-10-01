@@ -2,7 +2,7 @@
 # LUMELLA BEAUTY — configuración de Netlify
 # ----------------------------------------------------------
 # Este archivo le dice a Netlify dónde están las funciones
-# serverless (crear-preferencia y webhook-pago) para que las
+# serverless (crear-orden y webhook-pago) para que las
 # reconozca y las publique junto con el resto del sitio.
 # No necesitas editarlo.
 # ==========================================================
@@ -10,3 +10,7 @@
 [build]
   functions = "netlify/functions"
   publish = "."
+
+# crear-orden lee los precios de perfumes.js: se empaca junto con la función
+[functions]
+  included_files = ["perfumes.js"]

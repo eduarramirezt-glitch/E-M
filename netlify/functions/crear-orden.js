@@ -14,7 +14,30 @@
 // El token se lee de una variable de entorno de Netlify
 // (Site settings → Environment variables → MERCADOPAGO_ACCESS_TOKEN),
 // nunca está escrito aquí en el código.
+//
+// Los precios se toman SIEMPRE de perfumes.js (la misma lista que
+// usa la página). El precio que manda el navegador se ignora: si
+// alguien lo cambia, igual se cobra el precio real.
 // ==========================================================
+
+const TODOS_LOS_PERFUMES = require("../../perfumes.js");
+
+// Mismo id que usa el carrito en script.js: el nombre sin tildes y en minúsculas
+function perfumeId(nombre) {
+  return (nombre || "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+// Solo se pueden comprar los perfumes visibles y con precio
+const PERFUMES_POR_ID = new Map(
+  TODOS_LOS_PERFUMES.filter((p) => !p.oculto && p.precio > 0).map((p) => [perfumeId(p.nombre), p])
+);
+
+const MAX_UNIDADES = 20; // por perfume y por pedido
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -47,12 +70,26 @@ exports.handler = async (event) => {
     };
   }
 
+  // Cada producto se busca en la lista; nombre y precio salen de ahí, no del navegador
+  const lineas = [];
+  for (const item of items) {
+    const perfume = PERFUMES_POR_ID.get(item && perfumeId(item.id));
+    const cantidad = Number(item && item.cantidad);
+    if (!perfume || !Number.isInteger(cantidad) || cantidad < 1 || cantidad > MAX_UNIDADES) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "El pedido tiene un producto o una cantidad no válida" }),
+      };
+    }
+    lineas.push({ nombre: perfume.nombre, precio: perfume.precio, cantidad });
+  }
+
   const siteUrl = process.env.URL || "https://tu-sitio.netlify.app";
 
   // Para pesos colombianos (COP) Mercado Pago espera montos como texto
   // SIN decimales (la moneda no tiene centavos) — usar "145000", no "145000.00".
-  const totalAmount = items
-    .reduce((sum, item) => sum + item.precio * item.cantidad, 0)
+  const totalAmount = lineas
+    .reduce((sum, linea) => sum + linea.precio * linea.cantidad, 0)
     .toString();
 
   const orderBody = {
@@ -64,10 +101,10 @@ exports.handler = async (event) => {
       email: cliente.email,
       first_name: cliente.nombre,
     },
-    items: items.map((item) => ({
-      title: item.nombre,
-      quantity: item.cantidad,
-      unit_price: item.precio.toString(),
+    items: lineas.map((linea) => ({
+      title: linea.nombre,
+      quantity: linea.cantidad,
+      unit_price: linea.precio.toString(),
     })),
     config: {
       online: {

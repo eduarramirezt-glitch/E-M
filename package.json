@@ -1,0 +1,9 @@
+{
+  "name": "em-sitio",
+  "private": true,
+  "description": "Tienda E&M: dependencias de las funciones de Netlify (panel, catálogo y pagos)",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.6",
+    "@netlify/functions": "^6.0.3"
+  }
+}

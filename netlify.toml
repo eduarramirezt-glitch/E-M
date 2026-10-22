@@ -1,16 +1,24 @@
 # ==========================================================
-# LUMELLA BEAUTY — configuración de Netlify
+# E&M — configuración de Netlify
 # ----------------------------------------------------------
-# Este archivo le dice a Netlify dónde están las funciones
-# serverless (crear-orden y webhook-pago) para que las
-# reconozca y las publique junto con el resto del sitio.
-# No necesitas editarlo.
+# public/            → lo que se publica (página, fotos, panel /admin)
+# netlify/functions/ → funciones del servidor (catálogo, panel, pagos)
+# netlify/compartido → código que comparten esas funciones
+# Las dependencias (package.json) se instalan en el build y NO
+# quedan publicadas, porque viven fuera de public/.
 # ==========================================================
 
 [build]
+  publish = "public"
   functions = "netlify/functions"
-  publish = "."
 
-# crear-orden lee los precios de perfumes.js: se empaca junto con la función
+# El catálogo de arranque (perfumes.js) se empaca con las funciones
 [functions]
-  included_files = ["perfumes.js"]
+  included_files = ["public/perfumes.js"]
+
+# El panel no debe aparecer en Google
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-cache"

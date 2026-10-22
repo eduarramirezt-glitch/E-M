@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#16130f">
+<title>Panel · E&M</title>
+<link rel="icon" type="image/png" href="/images/logo-em.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+
+<!-- ===================== INGRESO ===================== -->
+<main class="login" id="vistaLogin" hidden>
+  <form class="login-card" id="formLogin" novalidate>
+    <img src="/images/logo-em.png" alt="E&M" class="login-logo" width="56" height="56">
+    <h1>Panel de la tienda</h1>
+    <p class="login-sub">Precios, fotos y perfumes de eymesencial.me</p>
+    <label class="campo">
+      <span>Contraseña</span>
+      <input type="password" id="loginClave" autocomplete="current-password" required>
+    </label>
+    <p class="mensaje-error" id="loginError" role="alert" hidden></p>
+    <button type="submit" class="btn btn-primario btn-ancho" id="loginBtn">Entrar</button>
+  </form>
+</main>
+
+<!-- ===================== PANEL ===================== -->
+<div class="panel" id="vistaPanel" hidden>
+  <header class="barra">
+    <div class="barra-marca">
+      <img src="/images/logo-em.png" alt="" width="32" height="32">
+      <span>E&M <em>· panel</em></span>
+    </div>
+    <nav class="barra-acciones">
+      <a href="/" target="_blank" rel="noopener" class="barra-link">Ver tienda
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3h7v7M13 3 4 12"/></svg>
+      </a>
+      <button type="button" class="barra-link" id="btnSalir">Salir</button>
+    </nav>
+  </header>
+
+  <main class="contenido">
+    <div class="encabezado">
+      <div>
+        <h1>Perfumes</h1>
+        <p class="encabezado-sub" id="resumen">Cargando…</p>
+      </div>
+      <button type="button" class="btn btn-primario" id="btnNuevo">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+        Agregar perfume
+      </button>
+    </div>
+
+    <div class="herramientas">
+      <label class="buscador">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+        <input type="search" id="buscar" placeholder="Buscar por nombre o marca" aria-label="Buscar perfumes" autocomplete="off">
+      </label>
+      <div class="segmentos" role="group" aria-label="Mostrar">
+        <button type="button" class="segmento is-activo" data-filtro="todos">Todos</button>
+        <button type="button" class="segmento" data-filtro="visibles">Visibles</button>
+        <button type="button" class="segmento" data-filtro="ocultos">Ocultos</button>
+        <button type="button" class="segmento" data-filtro="portada">En portada</button>
+      </div>
+    </div>
+
+    <p class="ayuda">El precio se cambia directo en la lista y se guarda solo al salir de la casilla. Para la foto, el nombre o las notas, toca <strong>Editar</strong>.</p>
+
+    <ul class="lista" id="lista" aria-live="polite"></ul>
+    <p class="vacio" id="vacio" hidden>No hay perfumes con ese filtro.</p>
+  </main>
+</div>
+
+<!-- ===================== EDITOR ===================== -->
+<dialog class="editor" id="editor" aria-labelledby="editorTitulo">
+  <form method="dialog" id="formEditor" novalidate>
+    <header class="editor-cabeza">
+      <h2 id="editorTitulo">Editar perfume</h2>
+      <button type="button" class="icono-btn" id="editorCerrar" aria-label="Cerrar">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>
+      </button>
+    </header>
+
+    <div class="editor-cuerpo">
+      <div class="foto-campo">
+        <div class="foto-vista" id="fotoVista"><span>Sin foto</span></div>
+        <div class="foto-acciones">
+          <label class="btn btn-secundario">
+            <input type="file" id="fotoArchivo" accept="image/*" hidden>
+            Subir foto
+          </label>
+          <label class="check">
+            <input type="checkbox" id="fotoFondo" checked>
+            <span>Volver crema el fondo blanco</span>
+          </label>
+          <p class="nota">Se ajusta sola a 800×640 sobre el fondo crema de la tienda.</p>
+        </div>
+      </div>
+
+      <label class="campo">
+        <span>Nombre</span>
+        <input type="text" id="fNombre" maxlength="80" required>
+      </label>
+      <label class="campo">
+        <span>Marca</span>
+        <input type="text" id="fMarca" maxlength="60" list="listaMarcas" required>
+        <datalist id="listaMarcas"></datalist>
+      </label>
+
+      <div class="fila-2">
+        <label class="campo">
+          <span>Colección</span>
+          <select id="fColeccion">
+            <option>Diseñador</option>
+            <option>Árabe</option>
+            <option>Nicho</option>
+            <option>Celebridad</option>
+          </select>
+        </label>
+        <label class="campo">
+          <span>Para</span>
+          <select id="fGenero">
+            <option value="Mujer">Mujer</option>
+            <option value="Hombre">Hombre</option>
+            <option value="Unisex">Unisex</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="campo">
+        <span>Notas olfativas</span>
+        <input type="text" id="fNotas" placeholder="Dulce, Vainilla, Amaderado">
+        <small>Sepáralas con comas.</small>
+      </label>
+
+      <div class="fila-2">
+        <label class="campo">
+          <span>Precio</span>
+          <div class="pesos"><span>$</span><input type="text" inputmode="numeric" id="fPrecio" required></div>
+        </label>
+        <label class="campo">
+          <span>Precio en cofre <em>(opcional)</em></span>
+          <div class="pesos"><span>$</span><input type="text" inputmode="numeric" id="fCofre"></div>
+        </label>
+      </div>
+
+      <div class="interruptores">
+        <label class="interruptor">
+          <input type="checkbox" id="fVisible">
+          <span class="pista" aria-hidden="true"></span>
+          <span>Visible en la tienda</span>
+        </label>
+        <label class="interruptor">
+          <input type="checkbox" id="fPortada">
+          <span class="pista" aria-hidden="true"></span>
+          <span>Puede salir en la portada</span>
+        </label>
+      </div>
+
+      <p class="mensaje-error" id="editorError" role="alert" hidden></p>
+    </div>
+
+    <footer class="editor-pie">
+      <button type="button" class="btn btn-peligro" id="btnEliminar">Eliminar</button>
+      <div class="editor-pie-der">
+        <button type="button" class="btn btn-secundario" id="btnCancelar">Cancelar</button>
+        <button type="submit" class="btn btn-primario" id="btnGuardar">Guardar</button>
+      </div>
+    </footer>
+  </form>
+</dialog>
+
+<div class="aviso" id="aviso" role="status" aria-live="polite" hidden></div>
+
+<script src="/admin/admin.js"></script>
+</body>
+</html>

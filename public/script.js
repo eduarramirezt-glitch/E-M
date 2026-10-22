@@ -8,12 +8,59 @@
 const WHATSAPP_NUMBER = "573214276676";
 
 // ----------------------------------------------------------
-// 1) PERFUMES: la lista completa (TODOS_LOS_PERFUMES) vive en
-//    perfumes.js, que index.html carga antes que este archivo.
+// 1) PERFUMES: salen de /api/catalogo (lo que edita el panel
+//    /admin). Si esa llamada falla, se usa perfumes.js, la lista
+//    con la que arrancó la tienda, para que nunca quede vacía.
 // ----------------------------------------------------------
 
-// Lo que se muestra en la tienda: todo menos los marcados como ocultos
-const PERFUMES = TODOS_LOS_PERFUMES.filter((perfume) => !perfume.oculto);
+let PERFUMES = []; // solo los visibles
+let PERFUMES_POR_ID = new Map();
+
+function usarPerfumes(lista) {
+  PERFUMES = lista
+    .filter((perfume) => !perfume.oculto && perfume.precio > 0)
+    .map((perfume) => ({ ...perfume, id: perfume.id || normalize(perfume.nombre) }));
+  PERFUMES_POR_ID = new Map(PERFUMES.map((perfume) => [perfume.id, perfume]));
+}
+
+function cargarScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function cargarCatalogo() {
+  try {
+    const control = new AbortController();
+    const espera = setTimeout(() => control.abort(), 10000); // el respaldo puede tener precios viejos: solo si de verdad falla
+    const resp = await fetch("/api/catalogo", { signal: control.signal });
+    clearTimeout(espera);
+    if (!resp.ok) throw new Error(`catálogo ${resp.status}`);
+    const datos = await resp.json();
+    if (!Array.isArray(datos.perfumes) || datos.perfumes.length === 0) throw new Error("catálogo vacío");
+    usarPerfumes(datos.perfumes);
+  } catch (error) {
+    console.warn("Usando la lista de respaldo:", error);
+    try {
+      await cargarScript("perfumes.js");
+      usarPerfumes(TODOS_LOS_PERFUMES);
+    } catch (e) {
+      usarPerfumes([]);
+    }
+  }
+}
+
+// se pide apenas carga este archivo, sin esperar a que termine de armarse la página
+const catalogoListo = cargarCatalogo();
+
+// Escapa texto para meterlo en HTML (nombres y marcas vienen del panel)
+function esc(texto) {
+  return String(texto ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 
 // ----------------------------------------------------------
 // 2) HELPERS
@@ -110,12 +157,12 @@ function createProductCard(perfume) {
   // --- Medio: foto real si ya existe, si no, placeholder elegante ---
   let mediaHTML;
   if (perfume.imagen_real) {
-    mediaHTML = `<img src="${perfume.imagen_real}" alt="${perfume.nombre} de ${perfume.marca}" loading="lazy">`;
+    mediaHTML = `<img src="${esc(perfume.imagen_real)}" alt="${esc(perfume.nombre)} de ${esc(perfume.marca)}" loading="lazy">`;
   } else {
     mediaHTML = `
-      <div class="placeholder-media" style="background:${perfume.imagen_placeholder}">
+      <div class="placeholder-media" style="background:${esc(perfume.imagen_placeholder)}">
         ${BOTTLE_ICON_SVG}
-        <span class="placeholder-brand">${perfume.marca}</span>
+        <span class="placeholder-brand">${esc(perfume.marca)}</span>
       </div>`;
   }
 
@@ -127,15 +174,15 @@ function createProductCard(perfume) {
       ${mediaHTML}
     </div>
     <div class="card-body">
-      <span class="card-brand">${perfume.marca}</span>
-      <h3><button type="button" class="card-title-btn">${perfume.nombre}</button></h3>
-      <p class="card-notes">${perfume.notas.join(" · ")}</p>
-      <p class="card-size">${coleccionRaw} · ${generoTag}</p>
+      <span class="card-brand">${esc(perfume.marca)}</span>
+      <h3><button type="button" class="card-title-btn">${esc(perfume.nombre)}</button></h3>
+      <p class="card-notes">${esc(perfume.notas.join(" · "))}</p>
+      <p class="card-size">${esc(coleccionRaw)} · ${generoTag}</p>
       <div class="card-footer-row">
         <span class="card-price">${formatPrice(perfume.precio)}</span>
         <div class="card-actions">
           <button type="button" class="btn-add-cart btn-add-cart--card" data-add-to-cart>Agregar</button>
-          <a href="${enlace_whatsapp}" class="card-wa" target="_blank" rel="noopener" aria-label="Consultar ${perfume.nombre} por WhatsApp" title="Consultar por WhatsApp">
+          <a href="${enlace_whatsapp}" class="card-wa" target="_blank" rel="noopener" aria-label="Consultar ${esc(perfume.nombre)} por WhatsApp" title="Consultar por WhatsApp">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20.5l1.6-4.5a8.3 8.3 0 1 1 15.4-4.4Z"/>
               <path d="M9.2 8.9c.3 2.7 2.4 4.9 5.5 5.9"/>
@@ -151,6 +198,66 @@ function createProductCard(perfume) {
   card.perfumeRef = perfume;
 
   return card;
+}
+
+// ----------------------------------------------------------
+// 3.1) PORTADA: tres perfumes distintos cada día
+//    Salen de los marcados "En portada" en el panel (si hay al
+//    menos 3) o de todos los que tienen foto. Todo el día se ven
+//    los mismos para cualquier visitante; al día siguiente cambian.
+// ----------------------------------------------------------
+function hoyEnColombia() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
+}
+
+// generador de números al azar que siempre da lo mismo para la misma semilla
+function azarConSemilla(semilla) {
+  let h = 2166136261;
+  for (const c of semilla) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  };
+}
+
+function elegirPortada(perfumes, dia) {
+  const conFoto = perfumes.filter((p) => p.imagen_real);
+  const marcados = conFoto.filter((p) => p.portada);
+  const grupo = marcados.length >= 3 ? marcados : conFoto;
+  const azar = azarConSemilla(`em-portada-${dia}`);
+  const barajados = grupo
+    .map((p) => [azar(), p])
+    .sort((a, b) => a[0] - b[0])
+    .map((par) => par[1]);
+
+  // variedad: primero uno de cada colección (árabe, diseñador…), luego lo que falte
+  const elegidos = [];
+  const colecciones = new Set();
+  for (const p of barajados) {
+    const coleccion = p.categoria.split("/")[0].trim();
+    if (colecciones.has(coleccion)) continue;
+    colecciones.add(coleccion);
+    elegidos.push(p);
+    if (elegidos.length === 3) return elegidos;
+  }
+  for (const p of barajados) {
+    if (elegidos.length === 3) break;
+    if (!elegidos.includes(p)) elegidos.push(p);
+  }
+  return elegidos;
+}
+
+function pintarPortada() {
+  const fotos = document.querySelectorAll(".hero-art .arch img");
+  const elegidos = elegirPortada(PERFUMES, hoyEnColombia());
+  fotos.forEach((img, i) => {
+    const perfume = elegidos[i];
+    if (!perfume) return;
+    img.addEventListener("load", () => img.classList.add("is-loaded"), { once: true });
+    img.src = perfume.imagen_real;
+  });
 }
 
 function renderCatalog() {
@@ -182,17 +289,17 @@ function openProductModal(perfume) {
   const waBtn = document.getElementById("modalWaBtn");
 
   media.innerHTML = perfume.imagen_real
-    ? `<img src="${perfume.imagen_real}" alt="${perfume.nombre} de ${perfume.marca}">`
-    : `<div class="placeholder-media" style="background:${perfume.imagen_placeholder}">
+    ? `<img src="${esc(perfume.imagen_real)}" alt="${esc(perfume.nombre)} de ${esc(perfume.marca)}">`
+    : `<div class="placeholder-media" style="background:${esc(perfume.imagen_placeholder)}">
          ${BOTTLE_ICON_SVG}
-         <span class="placeholder-brand">${perfume.marca}</span>
+         <span class="placeholder-brand">${esc(perfume.marca)}</span>
        </div>`;
 
   brand.textContent = perfume.marca;
   title.textContent = perfume.nombre;
   category.textContent = perfume.categoria;
   description.textContent = generateDescription(perfume);
-  notesWrap.innerHTML = perfume.notas.map((n) => `<span>${n}</span>`).join("");
+  notesWrap.innerHTML = perfume.notas.map((n) => `<span>${esc(n)}</span>`).join("");
   priceEl.textContent = formatPrice(perfume.precio);
   waBtn.setAttribute("href", buildWaLink(perfume.nombre));
 
@@ -233,11 +340,18 @@ function getCart() {
     // precio actual y se quitan los perfumes que ya no se muestran.
     return cart
       .filter((item) => PERFUMES_POR_ID.has(item.id))
-      .map((item) => ({
-        ...item,
-        precio: PERFUMES_POR_ID.get(item.id).precio,
-        cantidad: Math.min(item.cantidad, MAX_UNIDADES),
-      }));
+      .map((item) => {
+        const actual = PERFUMES_POR_ID.get(item.id);
+        return {
+          ...item,
+          nombre: actual.nombre,
+          marca: actual.marca,
+          precio: actual.precio,
+          imagen: actual.imagen_real,
+          imagen_placeholder: actual.imagen_placeholder,
+          cantidad: Math.min(item.cantidad, MAX_UNIDADES),
+        };
+      });
   } catch (e) {
     return [];
   }
@@ -252,12 +366,10 @@ function saveCart(cart) {
   renderCart();
 }
 
-// id único y estable por perfume (usamos el nombre normalizado)
+// id único y estable por perfume (lo asigna el catálogo; no cambia si se renombra)
 function perfumeId(perfume) {
-  return normalize(perfume.nombre);
+  return perfume.id || normalize(perfume.nombre);
 }
-
-const PERFUMES_POR_ID = new Map(PERFUMES.map((perfume) => [perfumeId(perfume), perfume]));
 
 // Mismo tope que acepta la función de pago (crear-orden.js)
 const MAX_UNIDADES = 20;
@@ -337,15 +449,15 @@ function renderCart() {
   itemsWrap.innerHTML = cart
     .map((item) => {
       const mediaHTML = item.imagen
-        ? `<img src="${item.imagen}" alt="${item.nombre}">`
-        : `<div class="placeholder-media" style="background:${item.imagen_placeholder}">${BOTTLE_ICON_SVG}</div>`;
+        ? `<img src="${esc(item.imagen)}" alt="${esc(item.nombre)}">`
+        : `<div class="placeholder-media" style="background:${esc(item.imagen_placeholder)}">${BOTTLE_ICON_SVG}</div>`;
 
       return `
-        <div class="cart-item" data-id="${item.id}">
+        <div class="cart-item" data-id="${esc(item.id)}">
           <div class="cart-item-media">${mediaHTML}</div>
           <div class="cart-item-info">
-            <span class="cart-item-brand">${item.marca}</span>
-            <span class="cart-item-name">${item.nombre}</span>
+            <span class="cart-item-brand">${esc(item.marca)}</span>
+            <span class="cart-item-name">${esc(item.nombre)}</span>
             <span class="cart-item-price">${formatPrice(item.precio)}</span>
             <div class="cart-item-qty">
               <button type="button" data-qty-minus aria-label="Restar">−</button>
@@ -392,7 +504,7 @@ function openCheckout() {
 
   const summary = document.getElementById("checkoutOrderSummary");
   summary.innerHTML = `
-    ${cart.map((i) => `<div class="checkout-line"><span>${i.nombre} x${i.cantidad}</span><span>${formatPrice(i.precio * i.cantidad)}</span></div>`).join("")}
+    ${cart.map((i) => `<div class="checkout-line"><span>${esc(i.nombre)} x${i.cantidad}</span><span>${formatPrice(i.precio * i.cantidad)}</span></div>`).join("")}
     <div class="checkout-line checkout-total"><span>Total</span><span>${formatPrice(cartTotal(cart))}</span></div>
   `;
 
@@ -488,7 +600,7 @@ function handleCheckoutSubmit(event) {
 // ----------------------------------------------------------
 // 4) INICIALIZACIÓN GENERAL
 // ----------------------------------------------------------
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   // --- 4.1) Botones/enlaces fijos de WhatsApp (header, hero, footer, flotante) ---
   document.querySelectorAll("[data-wa-product]").forEach((el) => {
@@ -505,7 +617,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-  // --- 4.2) Genera todas las tarjetas desde el arreglo PERFUMES ---
+  // --- 4.2) Trae el catálogo, pinta la portada del día y todas las tarjetas ---
+  await catalogoListo;
+  pintarPortada();
   renderCatalog();
 
   // --- 4.2.-1) Cinta de marcas: sale sola de los datos de PERFUMES ---

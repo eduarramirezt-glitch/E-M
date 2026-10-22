@@ -13,6 +13,8 @@
 <meta property="og:image" content="https://eymesencial.me/images/logo-em.png">
 <link rel="canonical" href="https://eymesencial.me/">
 <link rel="icon" type="image/png" href="images/logo-em.png">
+<!-- el catálogo se pide de entrada, en paralelo con las fuentes -->
+<link rel="preload" href="/api/catalogo" as="fetch" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -79,9 +81,10 @@
     </div>
 
     <div class="hero-art" aria-hidden="true">
-      <figure class="arch"><img src="images/delina.jpg" alt="" width="800" height="640" decoding="async"></figure>
-      <figure class="arch"><img src="images/khamrah.jpg" alt="" width="800" height="640" decoding="async"></figure>
-      <figure class="arch"><img src="images/sauvage.jpg" alt="" width="800" height="640" decoding="async"></figure>
+      <!-- script.js pone aquí tres perfumes distintos cada día (ver pintarPortada) -->
+      <figure class="arch"><img alt="" width="800" height="640" decoding="async"></figure>
+      <figure class="arch"><img alt="" width="800" height="640" decoding="async"></figure>
+      <figure class="arch"><img alt="" width="800" height="640" decoding="async"></figure>
     </div>
   </div>
 </section>
@@ -356,7 +359,6 @@
   </svg>
 </a>
 
-<script src="perfumes.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

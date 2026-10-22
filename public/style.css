@@ -399,6 +399,12 @@ a, input { touch-action: manipulation; }
   object-position: 50% 56%;
   transform: scale(1.22);
 }
+/* la foto del día aparece con un fundido cuando termina de cargar */
+.arch img { opacity: 0; transition: opacity 0.6s var(--ease-out); }
+.arch img.is-loaded { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .arch img { transition: none; }
+}
 
 @keyframes rise {
   from { opacity: 0; transform: translateY(16px); }

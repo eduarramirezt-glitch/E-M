@@ -15,6 +15,7 @@ export default async (req, context) => {
       "Content-Type": (foto.metadata && foto.metadata.tipo) || "image/jpeg",
       "Cache-Control": "public, max-age=31536000, immutable",
       "Netlify-CDN-Cache-Control": "public, durable, max-age=31536000, immutable",
+      "Netlify-Vary": "query=v", // "?algo" inventado no salta la caché
     },
   });
 };

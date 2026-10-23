@@ -29,4 +29,8 @@ export default async (req) => {
   return json({ token: crearSesion() });
 };
 
-export const config = { path: "/api/admin/login" };
+export const config = {
+  path: "/api/admin/login",
+  // además del bloqueo por hora: máximo 10 intentos por minuto por persona
+  rateLimit: { windowLimit: 10, windowSize: 60, aggregateBy: ["ip", "domain"] },
+};

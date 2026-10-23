@@ -10,6 +10,8 @@ export default async (req) => {
     "Cache-Control": "public, max-age=0, must-revalidate",
     "Netlify-CDN-Cache-Control": "public, durable, s-maxage=300, stale-while-revalidate=60",
     "Netlify-Cache-Tag": "catalogo",
+    // "?algo" inventado no crea otra copia en caché (ni otra ejecución de la función)
+    "Netlify-Vary": "query=v",
   });
 };
 

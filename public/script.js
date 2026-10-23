@@ -273,8 +273,29 @@ function renderCatalog() {
 // ----------------------------------------------------------
 // 5) MODAL DE PRODUCTO (se abre al hacer clic en el nombre)
 // ----------------------------------------------------------
-let lastFocusedElement = null;
 let currentModalPerfume = null;
+
+// Ventanas (producto, carrito, pago) accesibles con teclado: al abrir, el foco
+// entra a la ventana y el resto de la página queda inerte (Tab no se escapa);
+// al cerrar, el foco vuelve a donde estaba.
+let volverFoco = null;
+
+function abrirCapa(capa, elementoFoco) {
+  if (!document.querySelector("body > [data-capa-abierta]")) volverFoco = document.activeElement;
+  capa.dataset.capaAbierta = "";
+  for (const el of document.body.children) {
+    if (!el.hasAttribute("data-capa-abierta")) el.inert = true;
+  }
+  (elementoFoco || capa.querySelector("button, [href], input, select, textarea")).focus();
+}
+
+function cerrarCapa(capa) {
+  delete capa.dataset.capaAbierta;
+  if (document.querySelector("body > [data-capa-abierta]")) return;
+  for (const el of document.body.children) el.inert = false;
+  if (volverFoco && document.contains(volverFoco)) volverFoco.focus();
+  volverFoco = null;
+}
 
 function openProductModal(perfume) {
   currentModalPerfume = perfume;
@@ -303,14 +324,12 @@ function openProductModal(perfume) {
   priceEl.textContent = formatPrice(perfume.precio);
   waBtn.setAttribute("href", buildWaLink(perfume.nombre));
 
-  lastFocusedElement = document.activeElement;
-
   modal.hidden = false;
   // requestAnimationFrame para que la transición de opacidad/escala sí se anime
   // (con fallback por si el entorno no lo soporta)
   (window.requestAnimationFrame || window.setTimeout)(() => modal.classList.add("is-open"));
   document.body.classList.add("modal-open");
-  document.getElementById("modalClose").focus();
+  abrirCapa(modal, document.getElementById("modalClose"));
 }
 
 function closeProductModal() {
@@ -324,7 +343,7 @@ function closeProductModal() {
     modal.hidden = true;
   }, 280);
 
-  if (lastFocusedElement) lastFocusedElement.focus();
+  cerrarCapa(modal);
 }
 
 // ----------------------------------------------------------
@@ -481,18 +500,20 @@ function renderCart() {
 }
 
 function openCart() {
-  document.getElementById("cartOverlay").hidden = false;
-  (window.requestAnimationFrame || window.setTimeout)(() =>
-    document.getElementById("cartOverlay").classList.add("is-open")
-  );
+  const overlay = document.getElementById("cartOverlay");
+  overlay.hidden = false;
+  (window.requestAnimationFrame || window.setTimeout)(() => overlay.classList.add("is-open"));
   document.body.classList.add("modal-open");
+  abrirCapa(overlay, document.getElementById("cartClose"));
 }
 
 function closeCart() {
   const overlay = document.getElementById("cartOverlay");
+  if (overlay.hidden) return;
   overlay.classList.remove("is-open");
   document.body.classList.remove("modal-open");
   setTimeout(() => (overlay.hidden = true), 280);
+  cerrarCapa(overlay);
 }
 
 // ----------------------------------------------------------
@@ -513,13 +534,16 @@ function openCheckout() {
   modal.hidden = false;
   (window.requestAnimationFrame || window.setTimeout)(() => modal.classList.add("is-open"));
   document.body.classList.add("modal-open");
+  abrirCapa(modal, document.getElementById("checkoutClose"));
 }
 
 function closeCheckout() {
   const modal = document.getElementById("checkoutModal");
+  if (modal.hidden) return;
   modal.classList.remove("is-open");
   document.body.classList.remove("modal-open");
   setTimeout(() => (modal.hidden = true), 280);
+  cerrarCapa(modal);
 }
 
 // Arma el mensaje de WhatsApp con los datos del cliente + su pedido
@@ -533,7 +557,8 @@ function buildWaOrderMessage(datosCliente, cart) {
     `Nombre: ${datosCliente.nombre}\n` +
     `Teléfono: ${datosCliente.telefono}\n` +
     `Dirección: ${datosCliente.direccion}, ${datosCliente.ciudad}\n` +
-    `Método de pago elegido: ${datosCliente.metodo_pago === "contraentrega" ? "Pago contra entrega" : "Coordinar por WhatsApp"}`
+    `Método de pago elegido: ${datosCliente.metodo_pago === "contraentrega" ? "Pago contra entrega" : "Coordinar por WhatsApp"}\n` +
+    `Autorizo el tratamiento de mis datos para este pedido (eymesencial.me/privacidad).`
   );
 }
 
@@ -545,7 +570,7 @@ async function iniciarPagoMercadoPago(datosCliente, cart) {
   btn.textContent = "Redirigiendo a Mercado Pago...";
 
   try {
-    const respuesta = await fetch("/.netlify/functions/crear-orden", {
+    const respuesta = await fetch("/api/crear-orden", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cliente: datosCliente, items: cart }),

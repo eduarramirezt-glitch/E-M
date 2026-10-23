@@ -25,13 +25,13 @@
 <a class="skip-link" href="#catalogo">Saltar al catálogo</a>
 
 <!-- ===================== BARRA DE ANUNCIO ===================== -->
-<div class="announce-bar">
+<aside class="announce-bar" aria-label="Avisos">
   <p>
     <span>Fragancias tipo original</span>
     <span>Envíos a toda Colombia</span>
     <span>Pago seguro o contraentrega</span>
   </p>
-</div>
+</aside>
 
 <!-- ===================== HEADER ===================== -->
 <header class="site-header" id="top">
@@ -229,7 +229,14 @@
       </a>
     </div>
     <img src="images/logo-em.png" alt="E&M" class="footer-logo-img" width="120" height="120" loading="lazy">
-    <p class="footer-fine">© <span id="year"></span> E&M. Todos los derechos reservados.</p>
+    <div class="footer-fine">
+      <p>© <span id="year"></span> E&M. Todos los derechos reservados. Fragancias tipo original: no son productos de las marcas que se mencionan.</p>
+      <nav class="footer-legal" aria-label="Información legal">
+        <a href="/terminos">Términos y condiciones</a>
+        <a href="/privacidad">Política de datos</a>
+        <a href="https://www.sic.gov.co" target="_blank" rel="noopener">Superintendencia de Industria y Comercio</a>
+      </nav>
+    </div>
   </div>
 </footer>
 
@@ -340,6 +347,11 @@
           </label>
         </fieldset>
 
+        <label class="consent">
+          <input type="checkbox" name="autorizacion" required>
+          <span>Autorizo a E&M a usar mis datos para gestionar este pedido, según la <a href="/privacidad" target="_blank" rel="noopener">política de tratamiento de datos</a>, y acepto los <a href="/terminos" target="_blank" rel="noopener">términos de compra</a>.</span>
+        </label>
+
         <button type="submit" class="btn-add-cart checkout-submit-btn" id="checkoutSubmitBtn">
           Confirmar pedido
         </button>
@@ -353,11 +365,13 @@
 </div>
 
 <!-- ===================== BOTÓN FLOTANTE WHATSAPP ===================== -->
+<aside aria-label="WhatsApp">
 <a href="#" class="whatsapp-float" id="whatsappFloat" data-wa-product="consulta general" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener">
   <svg viewBox="0 0 32 32" width="28" height="28" fill="currentColor" aria-hidden="true">
     <path d="M19.11 17.205c-.372 0-1.088 1.39-1.518 1.39a.63.63 0 0 1-.315-.1c-.802-.402-1.504-.817-2.163-1.447-.545-.516-1.146-1.29-1.46-1.963a.426.426 0 0 1-.073-.215c0-.33.99-.945.99-1.49 0-.143-.73-2.09-.832-2.335-.143-.372-.214-.487-.605-.487-.187 0-.36-.043-.53-.043-.302 0-.53.115-.73.315-.688.688-1.032 1.404-1.06 2.377v.114c-.015.99.472 1.963 1.017 2.78 1.246 1.878 2.606 3.5 4.483 4.727.72.472 1.526.945 2.318 1.29.615.271 1.288.485 1.988.485.888 0 2.36-.888 2.588-1.99.043-.187.043-.32.043-.5 0-.15-.02-.3-.09-.42-.212-.35-1.05-.75-1.05-.75l-.201-.115ZM16.083 3.984C9.44 3.984 4.032 9.392 4.032 16.03c0 2.24.617 4.35 1.687 6.15L4 28.032l6-1.687a12.05 12.05 0 0 0 6.083 1.64c6.643 0 12.05-5.408 12.05-12.05 0-6.638-5.4-12.045-12.05-11.951Zm0 21.87a9.77 9.77 0 0 1-5.28-1.545l-.378-.225-3.93 1.117 1.05-3.85-.246-.396a9.76 9.76 0 0 1-1.497-5.222c0-5.408 4.401-9.81 9.81-9.81 5.407 0 9.81 4.394 9.81 9.81-.007 5.407-4.409 9.81-9.339 9.81Z"/>
   </svg>
 </a>
+</aside>
 
 <script src="script.js"></script>
 </body>

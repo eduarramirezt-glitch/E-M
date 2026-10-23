@@ -1,5 +1,5 @@
 // ==========================================================
-// E&M — Netlify Function: crear-orden (POST /.netlify/functions/crear-orden)
+// E&M — Netlify Function: crear-orden (POST /api/crear-orden)
 // ----------------------------------------------------------
 // Esta función corre en el SERVIDOR de Netlify, nunca en el
 // navegador del cliente. Por eso aquí (y SOLO aquí) es seguro
@@ -20,6 +20,13 @@
 import { leerCatalogo, normalizar } from "../compartido/catalogo.mjs";
 
 const MAX_UNIDADES = 20; // por perfume y por pedido
+
+// Freno contra abuso (cada intento consulta a Mercado Pago): 20 por minuto por persona.
+// El plan gratis de Netlify permite 2 reglas de este tipo; la otra está en admin-login.
+export const config = {
+  path: "/api/crear-orden",
+  rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip", "domain"] },
+};
 
 const respuesta = (status, datos) =>
   new Response(typeof datos === "string" ? datos : JSON.stringify(datos), { status });

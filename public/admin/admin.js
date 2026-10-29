@@ -122,6 +122,7 @@ async function abrirPanel() {
   $("vistaLogin").hidden = true;
   $("vistaPanel").hidden = false;
   pintarLista();
+  cargarPedidos(); // para el número de pedidos por atender en la pestaña
 }
 
 // ---------- lista ----------
@@ -264,6 +265,13 @@ function pintarFotoEditor(src) {
   $("fotoVista").innerHTML = src ? `<img src="${esc(rutaFoto(src))}" alt="Foto del perfume">` : "<span>Sin foto</span>";
 }
 
+function pintarNotasEditor(src) {
+  $("fotoNotasVista").innerHTML = src ? `<img src="${esc(rutaFoto(src))}" alt="Imagen de notas">` : "<span>Sin imagen</span>";
+  $("btnQuitarNotas").hidden = !src;
+}
+
+const listaComas = (texto) => texto.split(",").map((n) => n.trim()).filter(Boolean);
+
 function abrirEditor(perfume) {
   estado.editando = perfume || null;
   estado.fotoNueva = null;
@@ -279,10 +287,17 @@ function abrirEditor(perfume) {
   $("fCofre").value = miles(p.precio_cofre);
   $("fVisible").checked = perfume ? !perfume.oculto : true;
   $("fPortada").checked = !!p.portada;
+  const pir = p.piramide || {};
+  $("fSalida").value = (pir.salida || []).join(", ");
+  $("fCorazon").value = (pir.corazon || []).join(", ");
+  $("fFondo").value = (pir.fondo || []).join(", ");
+  estado.imagenNotas = p.imagen_notas || null;
   $("fotoArchivo").value = "";
+  $("fotoNotasArchivo").value = "";
   $("editorError").hidden = true;
   $("btnEliminar").hidden = !perfume;
   pintarFotoEditor(p.imagen_real);
+  pintarNotasEditor(estado.imagenNotas);
   $("editor").showModal();
   $("fNombre").focus();
 }
@@ -297,28 +312,54 @@ $("btnCancelar").addEventListener("click", () => $("editor").close());
   })
 );
 
-$("fotoArchivo").addEventListener("change", async (e) => {
-  const archivo = e.target.files && e.target.files[0];
-  if (!archivo) return;
-  const vista = $("fotoVista");
+// prepara la foto (800x640 sobre crema) y la sube; devuelve su dirección o null
+async function subirFoto(archivo, quitarBlanco, vista) {
   vista.classList.add("is-procesando");
   try {
-    const foto = await prepararFoto(archivo, $("fotoFondo").checked);
+    const foto = await prepararFoto(archivo, quitarBlanco);
     const resp = await fetch("/api/admin/imagen", {
       method: "POST",
       headers: { Authorization: `Bearer ${token()}`, "Content-Type": "image/jpeg" },
       body: foto,
     });
     const datos = await resp.json().catch(() => ({}));
-    if (resp.status === 401) return mostrarLogin(datos.error);
+    if (resp.status === 401) {
+      mostrarLogin(datos.error);
+      return null;
+    }
     if (!resp.ok) throw new Error(datos.error || "No se pudo subir la foto.");
-    estado.fotoNueva = datos.url;
-    pintarFotoEditor(datos.url);
+    return datos.url;
   } catch (error) {
     avisar(error.message || "No se pudo leer esa foto.", true);
+    return null;
   } finally {
     vista.classList.remove("is-procesando");
   }
+}
+
+$("fotoArchivo").addEventListener("change", async (e) => {
+  const archivo = e.target.files && e.target.files[0];
+  if (!archivo) return;
+  const url = await subirFoto(archivo, $("fotoFondo").checked, $("fotoVista"));
+  if (!url) return;
+  estado.fotoNueva = url;
+  pintarFotoEditor(url);
+});
+
+// imagen de notas: se respeta tal cual (sin volver crema el blanco, que suele ser parte del diseño)
+$("fotoNotasArchivo").addEventListener("change", async (e) => {
+  const archivo = e.target.files && e.target.files[0];
+  if (!archivo) return;
+  const url = await subirFoto(archivo, false, $("fotoNotasVista"));
+  if (!url) return;
+  estado.imagenNotas = url;
+  pintarNotasEditor(url);
+});
+
+$("btnQuitarNotas").addEventListener("click", () => {
+  estado.imagenNotas = null;
+  $("fotoNotasArchivo").value = "";
+  pintarNotasEditor(null);
 });
 
 $("formEditor").addEventListener("submit", async (e) => {
@@ -329,7 +370,13 @@ $("formEditor").addEventListener("submit", async (e) => {
     nombre: $("fNombre").value,
     marca: $("fMarca").value,
     categoria: `${$("fColeccion").value} / ${$("fGenero").value}`,
-    notas: $("fNotas").value.split(",").map((n) => n.trim()).filter(Boolean),
+    notas: listaComas($("fNotas").value),
+    piramide: {
+      salida: listaComas($("fSalida").value),
+      corazon: listaComas($("fCorazon").value),
+      fondo: listaComas($("fFondo").value),
+    },
+    imagen_notas: estado.imagenNotas || null,
     precio: leerPesos($("fPrecio").value),
     precio_cofre: leerPesos($("fCofre").value) || null,
     oculto: !$("fVisible").checked,
@@ -447,6 +494,134 @@ async function prepararFoto(archivo, quitarBlanco) {
     lienzo.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No se pudo preparar la foto."))), "image/jpeg", 0.86)
   );
 }
+
+// ---------- pestañas ----------
+
+document.querySelectorAll(".pestana").forEach((btn) =>
+  btn.addEventListener("click", () => {
+    const vista = btn.dataset.vista;
+    document.querySelectorAll(".pestana").forEach((b) => {
+      b.classList.toggle("is-activa", b === btn);
+      if (b === btn) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
+    });
+    $("vistaPerfumes").hidden = vista !== "perfumes";
+    $("vistaPedidos").hidden = vista !== "pedidos";
+    if (vista === "pedidos") cargarPedidos();
+  })
+);
+
+// ---------- pedidos ----------
+
+const pedidosEstado = { lista: [], filtro: "atender", busqueda: "" };
+const ESTADOS_PEDIDO = ["nuevo", "esperando pago", "pagado", "pago fallido", "enviado", "entregado", "cancelado"];
+const METODOS = { mercadopago: "Mercado Pago", contraentrega: "Contra entrega", whatsapp: "Coordinar por WhatsApp" };
+const porAtender = (p) => p.estado === "nuevo" || p.estado === "pagado";
+const precio = (n) => `$${miles(n) || 0}`;
+const fechaCorta = (iso) =>
+  new Date(iso).toLocaleString("es-CO", { timeZone: "America/Bogota", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+
+async function cargarPedidos() {
+  $("resumenPedidos").textContent = "Cargando…";
+  try {
+    const { pedidos } = await api("/api/admin/pedidos");
+    pedidosEstado.lista = pedidos;
+    pintarPedidos();
+  } catch (error) {
+    $("resumenPedidos").textContent = error.message;
+  }
+}
+
+function pedidosFiltrados() {
+  const q = normalizar(pedidosEstado.busqueda);
+  return pedidosEstado.lista.filter((p) => {
+    const f = pedidosEstado.filtro;
+    if (f === "atender" && !porAtender(p)) return false;
+    if (f === "cerrados" && !["entregado", "cancelado", "pago fallido"].includes(p.estado)) return false;
+    if (!["atender", "cerrados", "todos"].includes(f) && p.estado !== f) return false;
+    return !q || normalizar(`${p.codigo} ${p.cliente.nombre} ${p.cliente.telefono}`).includes(q);
+  });
+}
+
+function pedidoHTML(p) {
+  const tel = (p.cliente.telefono || "").replace(/\D/g, "");
+  const telWa = tel.length === 10 ? `57${tel}` : tel;
+  const items = p.items
+    .map((i) => `<li><span>${esc(i.nombre)} × ${i.cantidad}</span><span>${precio(i.precio * i.cantidad)}</span></li>`)
+    .join("");
+  const opciones = ESTADOS_PEDIDO.map((e) => `<option value="${e}"${e === p.estado ? " selected" : ""}>${e[0].toUpperCase() + e.slice(1)}</option>`).join("");
+  return `
+    <li class="pedido" data-codigo="${esc(p.codigo)}">
+      <div class="pedido-cabeza">
+        <div class="pedido-titulo">
+          <span class="pedido-codigo">${esc(p.codigo)}</span>
+          <span class="etiqueta-estado" data-estado="${esc(p.estado)}">${esc(p.estado)}</span>
+          <span class="pedido-fecha">${fechaCorta(p.fecha)}</span>
+        </div>
+        <span class="pedido-total">${precio(p.total)}</span>
+        <span class="pedido-cliente">${esc(p.cliente.nombre)} · ${esc(p.cliente.ciudad)} · <span class="pedido-metodo">${esc(METODOS[p.metodo] || p.metodo)}</span></span>
+      </div>
+      <div class="pedido-cuerpo">
+        <ul class="pedido-items">${items}</ul>
+        <dl class="pedido-datos">
+          <dt>Teléfono</dt><dd>${esc(p.cliente.telefono)}</dd>
+          ${p.cliente.email ? `<dt>Correo</dt><dd>${esc(p.cliente.email)}</dd>` : ""}
+          <dt>Dirección</dt><dd>${esc(p.cliente.direccion)}, ${esc(p.cliente.ciudad)}</dd>
+        </dl>
+        <div class="pedido-acciones">
+          <label class="visually-hidden" for="estado-${esc(p.codigo)}">Estado del pedido ${esc(p.codigo)}</label>
+          <select class="estado-select" id="estado-${esc(p.codigo)}" data-estado-pedido>${opciones}</select>
+          ${telWa ? `<a class="btn btn-secundario" href="https://wa.me/${telWa}?text=${encodeURIComponent(`Hola ${p.cliente.nombre}, te escribimos de E&M por tu pedido ${p.codigo}.`)}" target="_blank" rel="noopener">Escribir por WhatsApp</a>` : ""}
+        </div>
+      </div>
+    </li>`;
+}
+
+function pintarPedidos() {
+  const lista = pedidosFiltrados();
+  $("listaPedidos").innerHTML = lista.map(pedidoHTML).join("");
+  $("vacioPedidos").hidden = lista.length > 0;
+  const pendientes = pedidosEstado.lista.filter(porAtender).length;
+  $("resumenPedidos").textContent = pedidosEstado.lista.length
+    ? `${pendientes} por atender · ${pedidosEstado.lista.length} en total`
+    : "Todavía no hay pedidos.";
+  $("numPedidosNuevos").textContent = pendientes;
+  $("numPedidosNuevos").hidden = pendientes === 0;
+}
+
+$("btnRecargarPedidos").addEventListener("click", cargarPedidos);
+$("buscarPedido").addEventListener("input", (e) => {
+  pedidosEstado.busqueda = e.target.value;
+  pintarPedidos();
+});
+document.querySelectorAll("[data-filtro-pedido]").forEach((btn) =>
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("[data-filtro-pedido]").forEach((b) => b.classList.toggle("is-activo", b === btn));
+    pedidosEstado.filtro = btn.dataset.filtroPedido;
+    pintarPedidos();
+  })
+);
+
+$("listaPedidos").addEventListener("change", async (e) => {
+  if (!e.target.matches("[data-estado-pedido]")) return;
+  const codigo = e.target.closest(".pedido").dataset.codigo;
+  const select = e.target;
+  select.disabled = true;
+  try {
+    const { pedido } = await api("/api/admin/pedidos", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ codigo, estado: select.value }),
+    });
+    const i = pedidosEstado.lista.findIndex((p) => p.codigo === codigo);
+    if (i >= 0) pedidosEstado.lista[i] = pedido;
+    pintarPedidos();
+    avisar(`${codigo}: ${pedido.estado}`);
+  } catch (error) {
+    select.disabled = false;
+    avisar(error.message, true);
+  }
+});
 
 // ---------- arranque ----------
 

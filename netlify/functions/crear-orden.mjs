@@ -18,9 +18,14 @@
 // ==========================================================
 
 import { leerCatalogo, normalizar } from "../compartido/catalogo.mjs";
+import { actualizarPedido, codigoNuevo, codigoValido, guardarPedidoNuevo } from "../compartido/pedidos.mjs";
 
 const MAX_UNIDADES = 20; // por perfume y por pedido
 
+// Todos los pedidos pasan por aquí y quedan guardados para el panel (pestaña Pedidos):
+//   metodo "mercadopago"  → se crea la orden en Mercado Pago y se devuelve el link de pago
+//   "contraentrega" / "whatsapp" → solo se guarda; el navegador abre WhatsApp con el código
+//
 // Freno contra abuso (cada intento consulta a Mercado Pago): 20 por minuto por persona.
 // El plan gratis de Netlify permite 2 reglas de este tipo; la otra está en admin-login.
 export const config = {
@@ -34,11 +39,6 @@ const respuesta = (status, datos) =>
 export default async (req) => {
   if (req.method !== "POST") return respuesta(405, "Método no permitido");
 
-  const ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
-  if (!ACCESS_TOKEN) {
-    return respuesta(500, { error: "Falta configurar MERCADOPAGO_ACCESS_TOKEN en las variables de entorno de Netlify." });
-  }
-
   let payload;
   try {
     payload = await req.json();
@@ -46,9 +46,27 @@ export default async (req) => {
     return respuesta(400, { error: "JSON inválido" });
   }
 
-  const { cliente, items } = payload || {};
-  if (!cliente || !cliente.email || !items || !Array.isArray(items) || items.length === 0) {
+  const { items } = payload || {};
+  const metodo = ["mercadopago", "contraentrega", "whatsapp"].includes(payload && payload.metodo) ? payload.metodo : "mercadopago";
+  // datos del cliente: cortos y sin < > (se muestran en el panel)
+  const limpio = (v, max) => String(v || "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, max);
+  const c = (payload && payload.cliente) || {};
+  const cliente = {
+    nombre: limpio(c.nombre, 80),
+    telefono: limpio(c.telefono, 30),
+    email: limpio(c.email, 100),
+    direccion: limpio(c.direccion, 150),
+    ciudad: limpio(c.ciudad, 60),
+  };
+  if (!cliente.nombre || !cliente.telefono || !cliente.direccion || !items || !Array.isArray(items) || items.length === 0 || items.length > 50) {
+    return respuesta(400, { error: "Faltan datos del pedido" });
+  }
+  if (metodo === "mercadopago" && !cliente.email) {
     return respuesta(400, { error: "Faltan datos del pedido (revisa que venga el correo del cliente)" });
+  }
+  const ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (metodo === "mercadopago" && !ACCESS_TOKEN) {
+    return respuesta(500, { error: "Falta configurar MERCADOPAGO_ACCESS_TOKEN en las variables de entorno de Netlify." });
   }
 
   // Solo se pueden comprar los perfumes visibles y con precio
@@ -63,20 +81,40 @@ export default async (req) => {
     if (!perfume || !Number.isInteger(cantidad) || cantidad < 1 || cantidad > MAX_UNIDADES) {
       return respuesta(400, { error: "El pedido tiene un producto o una cantidad no válida" });
     }
-    lineas.push({ nombre: perfume.nombre, precio: perfume.precio, cantidad });
+    lineas.push({ id: perfume.id, nombre: perfume.nombre, precio: perfume.precio, cantidad });
   }
+
+  // el pedido queda guardado siempre (el código lo puede traer el navegador para ponerlo en WhatsApp)
+  const total = lineas.reduce((sum, linea) => sum + linea.precio * linea.cantidad, 0);
+  let codigo = codigoValido(payload.codigo) ? payload.codigo : codigoNuevo();
+  const pedido = {
+    codigo,
+    fecha: new Date().toISOString(),
+    metodo,
+    estado: metodo === "mercadopago" ? "esperando pago" : "nuevo",
+    cliente,
+    items: lineas,
+    total,
+  };
+  let guardado = await guardarPedidoNuevo(pedido);
+  for (let i = 0; !guardado && i < 3; i++) {
+    pedido.codigo = codigo = codigoNuevo();
+    guardado = await guardarPedidoNuevo(pedido);
+  }
+
+  if (metodo !== "mercadopago") return respuesta(200, { codigo });
 
   const siteUrl = process.env.URL || "https://eymesencial.me";
 
   // Para pesos colombianos (COP) Mercado Pago espera montos como texto
   // SIN decimales (la moneda no tiene centavos) — usar "145000", no "145000.00".
-  const totalAmount = lineas.reduce((sum, linea) => sum + linea.precio * linea.cantidad, 0).toString();
+  const totalAmount = total.toString();
 
   const orderBody = {
     type: "online",
     processing_mode: "manual", // requerido para Checkout Pro (redirect)
     total_amount: totalAmount,
-    external_reference: `EM-${Date.now()}`,
+    external_reference: codigo,
     payer: {
       email: cliente.email,
       first_name: cliente.nombre,
@@ -113,10 +151,13 @@ export default async (req) => {
 
     if (!mp.ok) {
       console.error("Error de Mercado Pago (status " + mp.status + "):", JSON.stringify(data));
+      await actualizarPedido(codigo, { estado: "pago fallido", nota: "Mercado Pago rechazó crear la orden" });
       return respuesta(502, { error: "Mercado Pago rechazó la solicitud", detalle: data });
     }
 
     console.log("Respuesta de Mercado Pago:", JSON.stringify(data));
+
+    await actualizarPedido(codigo, { mp_orden: data.id });
 
     const checkoutUrl = data.checkout_url || data.init_point || data?.transactions?.checkout_url;
     if (!checkoutUrl) {

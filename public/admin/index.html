@@ -44,7 +44,12 @@
     </nav>
   </header>
 
-  <main class="contenido">
+  <nav class="pestanas" aria-label="Secciones del panel">
+    <button type="button" class="pestana is-activa" data-vista="perfumes" aria-current="page">Perfumes</button>
+    <button type="button" class="pestana" data-vista="pedidos">Pedidos <span class="pestana-num" id="numPedidosNuevos" hidden></span></button>
+  </nav>
+
+  <main class="contenido" id="vistaPerfumes">
     <div class="encabezado">
       <div>
         <h1>Perfumes</h1>
@@ -73,6 +78,35 @@
 
     <ul class="lista" id="lista" aria-live="polite"></ul>
     <p class="vacio" id="vacio" hidden>No hay perfumes con ese filtro.</p>
+  </main>
+
+  <main class="contenido" id="vistaPedidos" hidden>
+    <div class="encabezado">
+      <div>
+        <h1>Pedidos</h1>
+        <p class="encabezado-sub" id="resumenPedidos">Cargando…</p>
+      </div>
+      <button type="button" class="btn btn-secundario" id="btnRecargarPedidos">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/></svg>
+        Actualizar
+      </button>
+    </div>
+    <div class="herramientas">
+      <label class="buscador">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+        <input type="search" id="buscarPedido" placeholder="Buscar por código, nombre o teléfono" aria-label="Buscar pedidos" autocomplete="off">
+      </label>
+      <div class="segmentos" role="group" aria-label="Mostrar pedidos">
+        <button type="button" class="segmento is-activo" data-filtro-pedido="atender">Por atender</button>
+        <button type="button" class="segmento" data-filtro-pedido="esperando pago">Esperando pago</button>
+        <button type="button" class="segmento" data-filtro-pedido="enviado">Enviados</button>
+        <button type="button" class="segmento" data-filtro-pedido="cerrados">Cerrados</button>
+        <button type="button" class="segmento" data-filtro-pedido="todos">Todos</button>
+      </div>
+    </div>
+    <p class="ayuda">"Por atender" son los pedidos nuevos (WhatsApp o contra entrega) y los ya pagados por Mercado Pago. Cambia el estado a medida que despachas. Los pagos de Mercado Pago se confirman solos.</p>
+    <ul class="pedidos" id="listaPedidos" aria-live="polite"></ul>
+    <p class="vacio" id="vacioPedidos" hidden>No hay pedidos con ese filtro.</p>
   </main>
 </div>
 
@@ -133,10 +167,38 @@
       </div>
 
       <label class="campo">
-        <span>Notas olfativas</span>
+        <span>Acordes</span>
         <input type="text" id="fNotas" placeholder="Dulce, Vainilla, Amaderado">
-        <small>Sepáralas con comas.</small>
+        <small>Sepáralos con comas. Son las palabras cortas que salen en la tarjeta y sirven para los filtros.</small>
       </label>
+
+      <fieldset class="piramide">
+        <legend>Pirámide olfativa</legend>
+        <p class="nota">Sale en la ficha "Notas olfativas" del perfume. Separa con comas.</p>
+        <label class="campo">
+          <span>Notas de salida</span>
+          <input type="text" id="fSalida" placeholder="Bergamota, Pimienta rosa">
+        </label>
+        <label class="campo">
+          <span>Notas de corazón</span>
+          <input type="text" id="fCorazon" placeholder="Jazmín, Lavanda">
+        </label>
+        <label class="campo">
+          <span>Notas de fondo</span>
+          <input type="text" id="fFondo" placeholder="Vainilla, Ámbar, Almizcle">
+        </label>
+        <div class="foto-campo">
+          <div class="foto-vista" id="fotoNotasVista"><span>Sin imagen</span></div>
+          <div class="foto-acciones">
+            <label class="btn btn-secundario">
+              <input type="file" id="fotoNotasArchivo" accept="image/*" hidden>
+              Subir imagen de notas
+            </label>
+            <button type="button" class="btn btn-peligro" id="btnQuitarNotas" hidden>Quitar imagen</button>
+            <p class="nota">Opcional. Si subes una imagen con las notas (por ejemplo la del proveedor), se muestra esa en lugar de la ficha.</p>
+          </div>
+        </div>
+      </fieldset>
 
       <div class="fila-2">
         <label class="campo">

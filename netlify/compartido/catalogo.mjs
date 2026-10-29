@@ -13,6 +13,7 @@
 import { getStore } from "@netlify/blobs";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import semilla from "../../public/perfumes.js";
+import PIRAMIDES from "./piramides.mjs";
 
 const CLAVE = "perfumes";
 const MAX_HISTORIAL = 60; // copias anteriores del catálogo que se guardan
@@ -32,7 +33,11 @@ export function normalizar(texto) {
     .trim();
 }
 
-const conId = (p) => ({ ...p, id: p.id || normalizar(p.nombre) });
+// id estable + pirámide de arranque si el perfume aún no tiene una propia
+const conId = (p) => {
+  const id = p.id || normalizar(p.nombre);
+  return { ...p, id, piramide: p.piramide || PIRAMIDES[id] || null };
+};
 
 export function json(datos, status = 200, cabeceras = {}) {
   return new Response(JSON.stringify(datos), {
@@ -82,8 +87,8 @@ async function guardarCopia(perfumes) {
 export function versionPublica(perfumes) {
   return perfumes
     .filter((p) => !p.oculto && p.precio > 0)
-    .map(({ id, nombre, marca, categoria, notas, precio, precio_cofre, imagen_real, imagen_placeholder, portada }) => ({
-      id, nombre, marca, categoria, notas, precio, precio_cofre, imagen_real, imagen_placeholder, portada,
+    .map(({ id, nombre, marca, categoria, notas, precio, precio_cofre, imagen_real, imagen_notas, imagen_placeholder, portada, piramide }) => ({
+      id, nombre, marca, categoria, notas, precio, precio_cofre, imagen_real, imagen_notas, imagen_placeholder, portada, piramide,
     }));
 }
 
@@ -119,10 +124,20 @@ export function validarPerfume(entrada) {
     .slice(0, 8);
   if (notas.length === 0) throw new Error("Escribe al menos una nota olfativa.");
 
+  const fotoValida = (src) => !src || /^(images\/[\w.-]+\.(jpe?g|png|webp)|\/img\/[\w.-]+)$/i.test(src);
   const imagen = p.imagen_real || null;
-  if (imagen && !/^(images\/[\w.-]+\.(jpe?g|png|webp)|\/img\/[\w.-]+)$/i.test(imagen)) {
-    throw new Error("La foto no es válida.");
-  }
+  const imagenNotas = p.imagen_notas || null;
+  if (!fotoValida(imagen) || !fotoValida(imagenNotas)) throw new Error("La foto no es válida.");
+
+  // pirámide olfativa: hasta 8 notas por nivel
+  const nivel = (lista, nombreCampo) => (Array.isArray(lista) ? lista : []).map((n) => texto(n, nombreCampo, 40)).slice(0, 8);
+  const pir = p.piramide || {};
+  const piramide = {
+    salida: nivel(pir.salida, "Cada nota de salida"),
+    corazon: nivel(pir.corazon, "Cada nota de corazón"),
+    fondo: nivel(pir.fondo, "Cada nota de fondo"),
+  };
+  const tienePiramide = piramide.salida.length + piramide.corazon.length + piramide.fondo.length > 0;
 
   const limpio = {
     id: p.id ? normalizar(p.id) : undefined,
@@ -133,6 +148,8 @@ export function validarPerfume(entrada) {
     // un perfume oculto puede quedar sin precio (0); uno visible necesita precio real
     precio: p.oculto && !Number(p.precio) ? 0 : pesos(p.precio, "El precio"),
     imagen_real: imagen,
+    imagen_notas: imagenNotas,
+    piramide: tienePiramide ? piramide : null,
     imagen_placeholder: /^#[0-9a-f]{6}$/i.test(p.imagen_placeholder || "") ? p.imagen_placeholder : "#3b2412",
   };
   if (p.precio_cofre !== undefined && p.precio_cofre !== null && p.precio_cofre !== "") {

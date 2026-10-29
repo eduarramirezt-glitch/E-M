@@ -122,6 +122,32 @@ const BOTTLE_ICON_SVG = `
   </svg>`;
 
 // ----------------------------------------------------------
+// 2.1) FICHA DE NOTAS OLFATIVAS ("segunda foto" del perfume)
+//    Si el panel subió una imagen de notas, se usa esa. Si no, se arma
+//    con la pirámide (salida / corazón / fondo) o, si no hay, con los acordes.
+// ----------------------------------------------------------
+function fichaNotasHTML(perfume) {
+  if (perfume.imagen_notas) {
+    return `<div class="ficha-notas"><img src="${esc(perfume.imagen_notas)}" alt="Notas olfativas de ${esc(perfume.nombre)}" loading="lazy"></div>`;
+  }
+  const p = perfume.piramide;
+  const fila = (nivel, notas) =>
+    notas && notas.length
+      ? `<div class="ficha-fila"><span class="ficha-nivel">${nivel}</span><p class="ficha-lista">${esc(notas.join(" · "))}</p></div>`
+      : "";
+  const filas =
+    p && (p.salida.length || p.corazon.length || p.fondo.length)
+      ? fila("Salida", p.salida) + fila("Corazón", p.corazon) + fila("Fondo", p.fondo)
+      : fila("Acordes", perfume.notas);
+  return `
+    <div class="ficha-notas" role="img" aria-label="Notas olfativas de ${esc(perfume.nombre)}">
+      <p class="ficha-titulo">Notas olfativas</p>
+      ${filas}
+      ${p ? `<p class="ficha-nota-pie">De la fragancia original de referencia</p>` : ""}
+    </div>`;
+}
+
+// ----------------------------------------------------------
 // 3) GENERA LAS TARJETAS A PARTIR DEL ARREGLO PERFUMES
 // ----------------------------------------------------------
 function createProductCard(perfume) {
@@ -172,6 +198,11 @@ function createProductCard(perfume) {
   card.innerHTML = `
     <div class="card-media">
       ${mediaHTML}
+      ${fichaNotasHTML(perfume)}
+      <button type="button" class="btn-notas" data-ver-notas aria-label="Ver notas olfativas de ${esc(perfume.nombre)}">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6"/></svg>
+        Notas
+      </button>
     </div>
     <div class="card-body">
       <span class="card-brand">${esc(perfume.marca)}</span>
@@ -297,7 +328,8 @@ function cerrarCapa(capa) {
   volverFoco = null;
 }
 
-function openProductModal(perfume) {
+// vista: "foto" o "notas" (la ficha de notas olfativas)
+function openProductModal(perfume, vista = "foto") {
   currentModalPerfume = perfume;
   const modal = document.getElementById("productModal");
   const media = document.getElementById("modalMedia");
@@ -309,12 +341,20 @@ function openProductModal(perfume) {
   const priceEl = document.getElementById("modalPrice");
   const waBtn = document.getElementById("modalWaBtn");
 
-  media.innerHTML = perfume.imagen_real
+  const foto = perfume.imagen_real
     ? `<img src="${esc(perfume.imagen_real)}" alt="${esc(perfume.nombre)} de ${esc(perfume.marca)}">`
     : `<div class="placeholder-media" style="background:${esc(perfume.imagen_placeholder)}">
          ${BOTTLE_ICON_SVG}
          <span class="placeholder-brand">${esc(perfume.marca)}</span>
        </div>`;
+  media.innerHTML = `
+    <div data-vista-panel="foto">${foto}</div>
+    <div data-vista-panel="notas">${fichaNotasHTML(perfume)}</div>
+    <div class="modal-vistas" role="group" aria-label="Ver">
+      <button type="button" class="modal-vista" data-vista="foto">Foto</button>
+      <button type="button" class="modal-vista" data-vista="notas">Notas olfativas</button>
+    </div>`;
+  mostrarVistaModal(vista);
 
   brand.textContent = perfume.marca;
   title.textContent = perfume.nombre;
@@ -330,6 +370,16 @@ function openProductModal(perfume) {
   (window.requestAnimationFrame || window.setTimeout)(() => modal.classList.add("is-open"));
   document.body.classList.add("modal-open");
   abrirCapa(modal, document.getElementById("modalClose"));
+}
+
+function mostrarVistaModal(vista) {
+  const media = document.getElementById("modalMedia");
+  media.querySelectorAll("[data-vista-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.vistaPanel !== vista;
+  });
+  media.querySelectorAll(".modal-vista").forEach((btn) => {
+    btn.setAttribute("aria-pressed", String(btn.dataset.vista === vista));
+  });
 }
 
 function closeProductModal() {
@@ -546,13 +596,21 @@ function closeCheckout() {
   cerrarCapa(modal);
 }
 
+// Código del pedido (EM-XXXXXX): sin 0/O ni 1/I para dictarlo sin confusiones
+function codigoPedido() {
+  const letras = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const azar = new Uint8Array(6);
+  crypto.getRandomValues(azar);
+  return "EM-" + Array.from(azar, (x) => letras[x % letras.length]).join("");
+}
+
 // Arma el mensaje de WhatsApp con los datos del cliente + su pedido
-function buildWaOrderMessage(datosCliente, cart) {
+function buildWaOrderMessage(datosCliente, cart, codigo) {
   const resumen = cart
     .map((item) => `• ${item.nombre} x${item.cantidad} — ${formatPrice(item.precio * item.cantidad)}`)
     .join("\n");
   return (
-    `Hola E&M, quiero confirmar este pedido:\n\n${resumen}\n\n` +
+    `Hola E&M, quiero confirmar este pedido (${codigo}):\n\n${resumen}\n\n` +
     `Total: ${formatPrice(cartTotal(cart))}\n\n` +
     `Nombre: ${datosCliente.nombre}\n` +
     `Teléfono: ${datosCliente.telefono}\n` +
@@ -573,7 +631,7 @@ async function iniciarPagoMercadoPago(datosCliente, cart) {
     const respuesta = await fetch("/api/crear-orden", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cliente: datosCliente, items: cart }),
+      body: JSON.stringify({ cliente: datosCliente, items: cart, metodo: "mercadopago" }),
     });
 
     if (!respuesta.ok) throw new Error("No se pudo crear la preferencia de pago");
@@ -615,9 +673,22 @@ function handleCheckoutSubmit(event) {
     return;
   }
 
-  // Contraentrega o "coordinar por WhatsApp": abrimos WhatsApp con todo el
-  // pedido ya escrito, y dejamos el carrito guardado por si vuelve a entrar.
-  const mensaje = buildWaOrderMessage(datosCliente, cart);
+  // Contraentrega o "coordinar por WhatsApp": el pedido se registra para el panel
+  // (sin esperar respuesta, para que WhatsApp abra de inmediato y el navegador no
+  // lo bloquee) y abrimos WhatsApp con todo el pedido y su código ya escritos.
+  const codigo = codigoPedido();
+  fetch("/api/crear-orden", {
+    method: "POST",
+    keepalive: true,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      cliente: datosCliente,
+      items: cart.map(({ id, cantidad }) => ({ id, cantidad })),
+      metodo: datosCliente.metodo_pago,
+      codigo,
+    }),
+  }).catch(() => {});
+  const mensaje = buildWaOrderMessage(datosCliente, cart, codigo);
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensaje)}`, "_blank");
   closeCheckout();
 }
@@ -717,7 +788,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const h3 = e.target.closest("h3, .card-media");
     if (!h3) return;
     const card = e.target.closest(".product-card");
-    if (card && card.perfumeRef) openProductModal(card.perfumeRef);
+    // el botón "Notas" abre el perfume directo en la ficha de notas olfativas
+    const vista = e.target.closest("[data-ver-notas]") ? "notas" : "foto";
+    if (card && card.perfumeRef) openProductModal(card.perfumeRef, vista);
+  });
+
+  document.getElementById("modalMedia").addEventListener("click", (e) => {
+    const btn = e.target.closest(".modal-vista");
+    if (btn) mostrarVistaModal(btn.dataset.vista);
   });
 
   // --- 4.2.2) Cerrar el modal (botón X, clic fuera de la tarjeta, tecla Esc) ---

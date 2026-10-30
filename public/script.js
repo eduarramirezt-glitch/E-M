@@ -122,29 +122,97 @@ const BOTTLE_ICON_SVG = `
   </svg>`;
 
 // ----------------------------------------------------------
-// 2.1) FICHA DE NOTAS OLFATIVAS ("segunda foto" del perfume)
-//    Si el panel subió una imagen de notas, se usa esa. Si no, se arma
-//    con la pirámide (salida / corazón / fondo) o, si no hay, con los acordes.
+// 2.1) FICHA DE ACORDES ("segunda foto" del perfume)
+//    La foto a la izquierda y, al lado, los acordes principales en
+//    barras de colores, del más fuerte (el primero) al más suave.
+//    Si el panel subió una imagen de notas propia, la tarjeta usa esa.
 // ----------------------------------------------------------
+// [fondo, texto] de cada acorde (claves sin tildes, en minúscula)
+const COLORES_ACORDE = {
+  amaderado: ["#7a4a17", "#fff"],
+  citrico: ["#f2ee6b", "#3a3416"],
+  aromatico: ["#76c1ae", "#173a32"],
+  ambar: ["#d98b60", "#3d1f0e"],
+  especiado: ["#d0603d", "#fff"],
+  calido: ["#e07b5c", "#fff"],
+  dulce: ["#e6577f", "#fff"],
+  vainilla: ["#f2e3bb", "#4a3b14"],
+  fresco: ["#a9dc80", "#23401a"],
+  floral: ["#f4a7c2", "#4a1a2c"],
+  "rosa floral": ["#f08aa8", "#4a1a2c"],
+  rosa: ["#f08aa8", "#4a1a2c"],
+  frutal: ["#f5a04a", "#3f2108"],
+  almizclado: ["#d9cfe3", "#3a2f45"],
+  acuatico: ["#66c2e0", "#103744"],
+  oud: ["#5b3a28", "#fff"],
+  cuero: ["#6e4a38", "#fff"],
+  verde: ["#6cbb6a", "#fff"],
+  herbaceo: ["#8fc27a", "#1f3a14"],
+  lavanda: ["#c7b5dd", "#3a2f45"],
+  iris: ["#b7a8d8", "#2f2645"],
+  coco: ["#efe9dc", "#4a3f2c"],
+  lactonico: ["#f3ede0", "#4a3f2c"],
+  caramelo: ["#c48a3e", "#fff"],
+  cacao: ["#6b4430", "#fff"],
+  "haba tonka": ["#b98a5a", "#fff"],
+  azafran: ["#e3a33a", "#3f2a08"],
+  ahumado: ["#8a8580", "#fff"],
+  intenso: ["#8a2f3a", "#fff"],
+  agrios: ["#e9e45c", "#3a3416"],
+  tropical: ["#f7b955", "#3f2a08"],
+  aldehido: ["#e3e7ee", "#2c3340"],
+  atalcado: ["#f1e9df", "#4a3f2c"],
+  suave: ["#eadcd0", "#4a3f2c"],
+  sabroso: ["#c9805a", "#fff"],
+};
+const COLORES_DE_RESPALDO = [["#b9a27c", "#2e2410"], ["#9fb8a8", "#1d3328"], ["#c9a3a3", "#3d1d1d"], ["#a8a8c8", "#24243d"]];
+
+function colorAcorde(acorde) {
+  const clave = normalize(acorde);
+  if (COLORES_ACORDE[clave]) return COLORES_ACORDE[clave];
+  let suma = 0;
+  for (const c of clave) suma += c.charCodeAt(0);
+  return COLORES_DE_RESPALDO[suma % COLORES_DE_RESPALDO.length];
+}
+
+function fichaAcordesHTML(perfume) {
+  const acordes = perfume.notas.slice(0, 9);
+  const barras = acordes
+    .map((acorde, i) => {
+      const [fondo, texto] = colorAcorde(acorde);
+      const ancho = Math.max(52, 100 - i * 11);
+      return `<li style="--ancho:${ancho}%;--fondo:${fondo};--texto:${texto}">${esc(acorde.toLowerCase())}</li>`;
+    })
+    .join("");
+  const foto = perfume.imagen_real
+    ? `<div class="ficha-foto"><img src="${esc(perfume.imagen_real)}" alt="" loading="lazy"></div>`
+    : "";
+  return `
+    <div class="ficha-notas${foto ? "" : " ficha-sin-foto"}" role="img" aria-label="Acordes principales de ${esc(perfume.nombre)}: ${esc(acordes.join(", "))}">
+      ${foto}
+      <div class="ficha-barras">
+        <p class="ficha-titulo">acordes principales</p>
+        <ul>${barras}</ul>
+      </div>
+    </div>`;
+}
+
 function fichaNotasHTML(perfume) {
   if (perfume.imagen_notas) {
-    return `<div class="ficha-notas"><img src="${esc(perfume.imagen_notas)}" alt="Notas olfativas de ${esc(perfume.nombre)}" loading="lazy"></div>`;
+    return `<div class="ficha-notas ficha-imagen"><img src="${esc(perfume.imagen_notas)}" alt="Notas olfativas de ${esc(perfume.nombre)}" loading="lazy"></div>`;
   }
+  return fichaAcordesHTML(perfume);
+}
+
+// pirámide (salida / corazón / fondo) para la ventana del perfume
+function piramideHTML(perfume) {
   const p = perfume.piramide;
+  if (!p || !(p.salida.length || p.corazon.length || p.fondo.length)) return "";
   const fila = (nivel, notas) =>
-    notas && notas.length
-      ? `<div class="ficha-fila"><span class="ficha-nivel">${nivel}</span><p class="ficha-lista">${esc(notas.join(" · "))}</p></div>`
-      : "";
-  const filas =
-    p && (p.salida.length || p.corazon.length || p.fondo.length)
-      ? fila("Salida", p.salida) + fila("Corazón", p.corazon) + fila("Fondo", p.fondo)
-      : fila("Acordes", perfume.notas);
+    notas.length ? `<div class="piramide-fila"><dt>${nivel}</dt><dd>${esc(notas.join(" · "))}</dd></div>` : "";
   return `
-    <div class="ficha-notas" role="img" aria-label="Notas olfativas de ${esc(perfume.nombre)}">
-      <p class="ficha-titulo">Notas olfativas</p>
-      ${filas}
-      ${p ? `<p class="ficha-nota-pie">De la fragancia original de referencia</p>` : ""}
-    </div>`;
+    <p class="piramide-titulo">Notas olfativas <span>de la fragancia original de referencia</span></p>
+    <dl class="piramide">${fila("Salida", p.salida)}${fila("Corazón", p.corazon)}${fila("Fondo", p.fondo)}</dl>`;
 }
 
 // ----------------------------------------------------------
@@ -328,8 +396,8 @@ function cerrarCapa(capa) {
   volverFoco = null;
 }
 
-// vista: "foto" o "notas" (la ficha de notas olfativas)
-function openProductModal(perfume, vista = "foto") {
+// vista: "foto" (la foto sola) o "notas" (la foto con sus acordes al lado)
+function openProductModal(perfume, vista = "notas") {
   currentModalPerfume = perfume;
   const modal = document.getElementById("productModal");
   const media = document.getElementById("modalMedia");
@@ -347,20 +415,27 @@ function openProductModal(perfume, vista = "foto") {
          ${BOTTLE_ICON_SVG}
          <span class="placeholder-brand">${esc(perfume.marca)}</span>
        </div>`;
-  media.innerHTML = `
-    <div data-vista-panel="foto">${foto}</div>
-    <div data-vista-panel="notas">${fichaNotasHTML(perfume)}</div>
-    <div class="modal-vistas" role="group" aria-label="Ver">
-      <button type="button" class="modal-vista" data-vista="foto">Foto</button>
-      <button type="button" class="modal-vista" data-vista="notas">Notas olfativas</button>
-    </div>`;
-  mostrarVistaModal(vista);
+  // sin foto no hay nada que poner al lado de los acordes: solo la ficha
+  // si el panel subió una imagen de notas propia, se puede ver como tercera vista
+  const vistas = [];
+  if (perfume.imagen_real) vistas.push(["notas", "Foto y acordes", fichaAcordesHTML(perfume)], ["foto", "Foto", foto]);
+  else vistas.push(["notas", "Acordes", fichaAcordesHTML(perfume)]);
+  if (perfume.imagen_notas) vistas.push(["imagen", "Notas olfativas", fichaNotasHTML(perfume)]);
+  media.innerHTML =
+    vistas.map(([clave, , html]) => `<div data-vista-panel="${clave}">${html}</div>`).join("") +
+    (vistas.length > 1
+      ? `<div class="modal-vistas" role="group" aria-label="Ver">${vistas
+          .map(([clave, nombre]) => `<button type="button" class="modal-vista" data-vista="${clave}">${nombre}</button>`)
+          .join("")}</div>`
+      : "");
+  mostrarVistaModal(vistas.some(([clave]) => clave === vista) ? vista : "notas");
 
   brand.textContent = perfume.marca;
   title.textContent = perfume.nombre;
   category.textContent = perfume.categoria;
   description.textContent = generateDescription(perfume);
-  notesWrap.innerHTML = perfume.notas.map((n) => `<span>${esc(n)}</span>`).join("");
+  notesWrap.innerHTML = piramideHTML(perfume);
+  notesWrap.hidden = !notesWrap.innerHTML;
   priceEl.textContent = formatPrice(perfume.precio);
   waBtn.setAttribute("href", buildWaLink(perfume.nombre));
 
@@ -788,8 +863,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const h3 = e.target.closest("h3, .card-media");
     if (!h3) return;
     const card = e.target.closest(".product-card");
-    // el botón "Notas" abre el perfume directo en la ficha de notas olfativas
-    const vista = e.target.closest("[data-ver-notas]") ? "notas" : "foto";
+    // se abre con la foto y sus acordes; el botón "Notas" va a la imagen de notas si el panel subió una
+    const vista = e.target.closest("[data-ver-notas]") ? "imagen" : "notas";
     if (card && card.perfumeRef) openProductModal(card.perfumeRef, vista);
   });
 
